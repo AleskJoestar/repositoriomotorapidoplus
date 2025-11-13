@@ -1,1 +1,0 @@
-# ads-app-web-basico
