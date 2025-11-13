@@ -1,0 +1,34 @@
+<h3>Chamados</h3>
+
+<a href="/chamado/novo" class="btn btn-sm btn-primary">Adicionar Chamado</a>
+
+{{#if success}}
+    <div class="alert alert-success">
+        {{#each success}}
+            {{this}}
+        {{/each}}
+    </div>
+{{/if}}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Título</th>
+            <th>Prioridade</th>
+            <th>Situação</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each listaChamados}}
+        <tr>
+            <td>{{this.id}}</td>
+            <td>{{this.titulo}}</td>
+            <td>{{this.prioridade}}</td>
+            <td>
+                {{this.situacao}}
+            </td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>

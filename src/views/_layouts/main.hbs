@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="h-100">
+<head>
+  <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1' />
+    <title>Estrutura Base</title>
+    <!-- Bootstrap CSS -->
+    <link href='/css/bootstrap.min.css' rel='stylesheet' />
+    <style>
+
+    </style>
+</head>
+<body class="d-flex flex-column h-100">
+  <div class="container">
+    {{> header}}   <!-- Partial -->
+
+    <main>
+      <div class="py-3">
+        {{{body}}}     <!-- Content from child template -->
+      </div>
+    </main>
+  </div>
+
+  {{> footer}}   <!-- Partial -->
+</body>
+</html>
