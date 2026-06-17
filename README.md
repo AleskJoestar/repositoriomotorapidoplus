@@ -20,9 +20,9 @@ O MotoRapido PLUS foi desenvolvido com o objetivo de:
 
 ## 👥 Equipe
 
-| Integrante | Função |
-|-----------|--------|
-| **Alessandro Diniz Loss** | Desenvolvedor Full-Stack |
+| Integrante |
+|-----------|
+| **Alessandro Diniz Loss** |
 
 ---
 
