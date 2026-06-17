@@ -21,3 +21,38 @@ model User {
 
   @@map("users")
 }
+
+model Employee {
+  id              String   @id @default(cuid())
+  name            String
+  cpf             String   @unique
+  rg              String
+  email           String
+  phone           String
+  cargo           String
+  department      String
+  birthDate       DateTime
+  hireDate        DateTime
+  salary          Float
+  address         String
+  status          String   @default("Ativo") // "Ativo" ou "Inativo"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  inactivatedAt   DateTime?
+  
+  auditLogs       AuditLog[]
+
+  @@map("employees")
+}
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  action          String   // "CREATE", "UPDATE", "DELETE"
+  changedFields   String   // JSON string com as mudanças
+  userId          String   // ID do usuário que fez a ação
+  createdAt       DateTime @default(now())
+
+  @@map("audit_logs")
+}

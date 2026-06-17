@@ -1,0 +1,228 @@
+{
+  "_comment": "Instruções: Copie e cole as requisições no VS Code REST Client ou Postman",
+  
+  "01_Register_User": {
+    "method": "POST",
+    "url": "http://localhost:3000/api/auth/register",
+    "body": {
+      "nome": "Admin Teste",
+      "email": "admin@teste.com",
+      "senha": "senha123",
+      "confirmarSenha": "senha123"
+    }
+  },
+
+  "02_Login": {
+    "method": "POST",
+    "url": "http://localhost:3000/api/auth/login",
+    "body": {
+      "email": "admin@teste.com",
+      "senha": "senha123"
+    },
+    "note": "Salve o accessToken para os testes de Employee"
+  },
+
+  "03_Create_Employee_Valid": {
+    "method": "POST",
+    "url": "http://localhost:3000/api/employees",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    },
+    "body": {
+      "name": "João Silva",
+      "cpf": "123.456.789-10",
+      "rg": "12345678",
+      "email": "joao.silva@exemplo.com",
+      "phone": "(11) 98765-4321",
+      "cargo": "Mecânico",
+      "department": "Manutenção",
+      "birthDate": "1990-05-15",
+      "hireDate": "2020-01-10",
+      "salary": 3500.00,
+      "address": "Rua das Flores, 123, São Paulo, SP"
+    },
+    "note": "Salve o ID do employee para os testes seguintes"
+  },
+
+  "03_Create_Employee_MariaGonzalez": {
+    "method": "POST",
+    "url": "http://localhost:3000/api/employees",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    },
+    "body": {
+      "name": "Maria González",
+      "cpf": "987.654.321-01",
+      "rg": "87654321",
+      "email": "maria.gonzalez@exemplo.com",
+      "phone": "(21) 99876-5432",
+      "cargo": "Supervisor",
+      "department": "Gestão",
+      "birthDate": "1985-03-20",
+      "hireDate": "2019-06-15",
+      "salary": 5500.00,
+      "address": "Av. Paulista, 1000, São Paulo, SP"
+    }
+  },
+
+  "04_Get_All_Employees": {
+    "method": "GET",
+    "url": "http://localhost:3000/api/employees",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    }
+  },
+
+  "04_Get_Employees_Filter_Cargo": {
+    "method": "GET",
+    "url": "http://localhost:3000/api/employees?cargo=Mecânico",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    }
+  },
+
+  "04_Get_Employees_Filter_Department": {
+    "method": "GET",
+    "url": "http://localhost:3000/api/employees?department=Manutenção",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    }
+  },
+
+  "05_Get_Employee_By_Id": {
+    "method": "GET",
+    "url": "http://localhost:3000/api/employees/{ID_DO_FUNCIONARIO}",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    },
+    "note": "Retorna employee + auditLogs"
+  },
+
+  "06_Update_Employee_Salary": {
+    "method": "PUT",
+    "url": "http://localhost:3000/api/employees/{ID_DO_FUNCIONARIO}",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    },
+    "body": {
+      "salary": 4000.00
+    }
+  },
+
+  "06_Update_Employee_Multiple_Fields": {
+    "method": "PUT",
+    "url": "http://localhost:3000/api/employees/{ID_DO_FUNCIONARIO}",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    },
+    "body": {
+      "salary": 4200.50,
+      "cargo": "Mecânico Sênior",
+      "phone": "(11) 99999-9999"
+    }
+  },
+
+  "07_Delete_Employee_Logical": {
+    "method": "DELETE",
+    "url": "http://localhost:3000/api/employees/{ID_DO_FUNCIONARIO}",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    },
+    "note": "Exclusão lógica: status muda para 'Inativo'"
+  },
+
+  "ERROR_Test_Invalid_CPF": {
+    "method": "POST",
+    "url": "http://localhost:3000/api/employees",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    },
+    "body": {
+      "name": "Teste Erro",
+      "cpf": "111.111.111-11",
+      "rg": "12345678",
+      "email": "erro@teste.com",
+      "phone": "(11) 98765-4321",
+      "cargo": "Mecânico",
+      "department": "Manutenção",
+      "birthDate": "1990-05-15",
+      "hireDate": "2020-01-10",
+      "salary": 3500.00,
+      "address": "Rua das Flores, 123, São Paulo, SP"
+    },
+    "expected_error": "400 - CPF inválido"
+  },
+
+  "ERROR_Test_Minor_Age": {
+    "method": "POST",
+    "url": "http://localhost:3000/api/employees",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    },
+    "body": {
+      "name": "Teste Menor",
+      "cpf": "456.789.123-45",
+      "rg": "12345678",
+      "email": "menor@teste.com",
+      "phone": "(11) 98765-4321",
+      "cargo": "Mecânico",
+      "department": "Manutenção",
+      "birthDate": "2010-05-15",
+      "hireDate": "2020-01-10",
+      "salary": 3500.00,
+      "address": "Rua das Flores, 123, São Paulo, SP"
+    },
+    "expected_error": "400 - Funcionário deve ter no mínimo 18 anos"
+  },
+
+  "ERROR_Test_Future_Hire_Date": {
+    "method": "POST",
+    "url": "http://localhost:3000/api/employees",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    },
+    "body": {
+      "name": "Teste Futuro",
+      "cpf": "789.123.456-78",
+      "rg": "12345678",
+      "email": "futuro@teste.com",
+      "phone": "(11) 98765-4321",
+      "cargo": "Mecânico",
+      "department": "Manutenção",
+      "birthDate": "1990-05-15",
+      "hireDate": "2030-01-10",
+      "salary": 3500.00,
+      "address": "Rua das Flores, 123, São Paulo, SP"
+    },
+    "expected_error": "400 - Data de admissão não pode ser no futuro"
+  },
+
+  "ERROR_Test_Duplicate_CPF": {
+    "method": "POST",
+    "url": "http://localhost:3000/api/employees",
+    "headers": {
+      "Authorization": "Bearer {SEU_ACCESS_TOKEN}"
+    },
+    "body": {
+      "name": "Duplicate Test",
+      "cpf": "123.456.789-10",
+      "rg": "87654321",
+      "email": "duplicado@teste.com",
+      "phone": "(11) 98765-4321",
+      "cargo": "Mecânico",
+      "department": "Manutenção",
+      "birthDate": "1990-05-15",
+      "hireDate": "2020-01-10",
+      "salary": 3500.00,
+      "address": "Rua das Flores, 123, São Paulo, SP"
+    },
+    "expected_error": "409 - CPF já cadastrado no sistema"
+  },
+
+  "ERROR_Test_No_Auth_Token": {
+    "method": "GET",
+    "url": "http://localhost:3000/api/employees",
+    "note": "Sem Authorization header",
+    "expected_error": "401 - Token de acesso não fornecido"
+  }
+}

@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import authRoutes from '@/routes/auth';
+import employeeRoutes from '@/routes/employees';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -19,6 +20,9 @@ app.get('/health', (req: Request, res: Response) => {
 
 // Rotas de autenticação
 app.use('/api/auth', authRoutes);
+
+// Rotas de funcionários
+app.use('/api', employeeRoutes);
 
 // Tratamento de rota não encontrada
 app.use((req: Request, res: Response) => {
