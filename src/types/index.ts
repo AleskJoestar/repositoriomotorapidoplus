@@ -34,7 +34,7 @@ export interface TokenResponse {
 // ============ EMPLOYEE TYPES ============
 
 export interface Employee {
-  id: string;
+  id: number;
   name: string;
   cpf: string;
   rg: string;
@@ -82,7 +82,7 @@ export interface UpdateEmployeeRequest {
 
 export interface AuditLog {
   id: string;
-  employeeId: string;
+  employeeId: number;
   action: "CREATE" | "UPDATE" | "DELETE";
   changedFields: Record<string, any>;
   userId: string;

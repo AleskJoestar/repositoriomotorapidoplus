@@ -23,7 +23,7 @@ model User {
 }
 
 model Employee {
-  id              String   @id @default(cuid())
+  id              Int      @id @default(autoincrement())
   name            String
   cpf             String   @unique
   rg              String
@@ -47,7 +47,7 @@ model Employee {
 
 model AuditLog {
   id              String   @id @default(cuid())
-  employeeId      String
+  employeeId      Int
   employee        Employee @relation(fields: [employeeId], references: [id])
   action          String   // "CREATE", "UPDATE", "DELETE"
   changedFields   String   // JSON string com as mudanças

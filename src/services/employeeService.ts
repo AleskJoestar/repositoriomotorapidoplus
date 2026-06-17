@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
  * Registrar auditoria de ação
  */
 const createAuditLog = async (
-  employeeId: string,
+  employeeId: number,
   action: 'CREATE' | 'UPDATE' | 'DELETE',
   changedFields: Record<string, any>,
   userId: string
@@ -110,25 +110,25 @@ export const getAllEmployees = async (filters?: {
 }): Promise<Employee[]> => {
   const where: any = {};
 
-  // Filtro de status (padrão: apenas Ativos)
-  if (filters?.status) {
-    where.status = filters.status;
+  // Filtro de status (padrão: apenas Ativos, mas se vazio retorna todos)
+  if (filters?.status === undefined || filters?.status === '') {
+    where.status = 'Ativo'; // Padrão ao abrir a página
+  } else if (filters?.status === 'todos') {
+    // Se enviar 'todos', não filtra por status (retorna todos)
   } else {
-    where.status = 'Ativo';
+    where.status = filters.status;
   }
 
-  // Filtros adicionais
-  if (filters?.cargo) {
+  // Filtros adicionais (sem mode: insensitive pois SQLite não suporta)
+  if (filters?.cargo && filters.cargo.trim() !== '') {
     where.cargo = {
       contains: filters.cargo,
-      mode: 'insensitive',
     };
   }
 
-  if (filters?.department) {
+  if (filters?.department && filters.department.trim() !== '') {
     where.department = {
       contains: filters.department,
-      mode: 'insensitive',
     };
   }
 
@@ -162,8 +162,9 @@ export const getAllEmployees = async (filters?: {
  * Buscar funcionário por ID
  */
 export const getEmployeeById = async (id: string): Promise<Employee | null> => {
+  const numericId = parseInt(id, 10);
   const employee = await prisma.employee.findUnique({
-    where: { id },
+    where: { id: numericId },
   });
 
   if (!employee) {
@@ -181,9 +182,11 @@ export const updateEmployee = async (
   data: UpdateEmployeeRequest,
   userId: string
 ): Promise<Employee> => {
+  const numericId = parseInt(id, 10);
+
   // Validar existência
   const existingEmployee = await prisma.employee.findUnique({
-    where: { id },
+    where: { id: numericId },
   });
 
   if (!existingEmployee) {
@@ -210,7 +213,7 @@ export const updateEmployee = async (
     const emailExists = await prisma.employee.findFirst({
       where: {
         email: data.email,
-        NOT: { id },
+        NOT: { id: numericId },
       },
     });
 
@@ -242,13 +245,13 @@ export const updateEmployee = async (
 
   // Atualizar funcionário
   const updatedEmployee = await prisma.employee.update({
-    where: { id },
+    where: { id: numericId },
     data: updateData,
   });
 
   // Registrar auditoria
   if (Object.keys(changedFields).length > 0) {
-    await createAuditLog(id, 'UPDATE', changedFields, userId);
+    await createAuditLog(numericId, 'UPDATE', changedFields, userId);
   }
 
   return formatEmployee(updatedEmployee);
@@ -261,9 +264,11 @@ export const deleteEmployee = async (
   id: string,
   userId: string
 ): Promise<Employee> => {
+  const numericId = parseInt(id, 10);
+
   // Validar existência
   const existingEmployee = await prisma.employee.findUnique({
-    where: { id },
+    where: { id: numericId },
   });
 
   if (!existingEmployee) {
@@ -275,7 +280,7 @@ export const deleteEmployee = async (
   // Se status é "Ativo", desativar
   if (existingEmployee.status === 'Ativo') {
     const deletedEmployee = await prisma.employee.update({
-      where: { id },
+      where: { id: numericId },
       data: {
         status: 'Inativo',
         inactivatedAt: new Date(),
@@ -284,7 +289,7 @@ export const deleteEmployee = async (
 
     // Registrar auditoria
     await createAuditLog(
-      id,
+      numericId,
       'DELETE',
       {
         status: 'Inativo',
@@ -296,18 +301,36 @@ export const deleteEmployee = async (
     return formatEmployee(deletedEmployee);
   }
 
-  // Se status é "Inativo", bloquear exclusão física
-  const error = new Error('Funcionário já foi inativado');
-  (error as any).statusCode = 400;
-  throw error;
+  // Se status é "Inativo", permitir reativação
+  const reactivatedEmployee = await prisma.employee.update({
+    where: { id: numericId },
+    data: {
+      status: 'Ativo',
+      inactivatedAt: null,
+    },
+  });
+
+  // Registrar auditoria
+  await createAuditLog(
+    numericId,
+    'UPDATE',
+    {
+      status: 'Ativo',
+      inactivatedAt: null,
+    },
+    userId
+  );
+
+  return formatEmployee(reactivatedEmployee);
 };
 
 /**
  * Buscar logs de auditoria de um funcionário
  */
 export const getAuditLogs = async (employeeId: string): Promise<AuditLog[]> => {
+  const numericId = parseInt(employeeId, 10);
   const logs = await prisma.auditLog.findMany({
-    where: { employeeId },
+    where: { employeeId: numericId },
     orderBy: { createdAt: 'desc' },
   });
 

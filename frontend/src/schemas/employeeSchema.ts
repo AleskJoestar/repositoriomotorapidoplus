@@ -70,73 +70,37 @@ const calculateAge = (birthDate: string): number => {
 export const createEmployeeSchema = z.object({
   name: z
     .string()
-    .min(1, 'Nome é obrigatório')
-    .min(3, 'Nome deve ter no mínimo 3 caracteres')
-    .max(100, 'Nome deve ter no máximo 100 caracteres'),
+    .min(1, 'Nome é obrigatório'),
   cpf: z
     .string()
-    .min(1, 'CPF é obrigatório')
-    .refine(
-      (value) => validateCPF(value),
-      'CPF inválido'
-    ),
+    .min(1, 'CPF é obrigatório'),
   rg: z
     .string()
-    .min(1, 'RG é obrigatório')
-    .min(5, 'RG inválido'),
+    .min(1, 'RG é obrigatório'),
   email: z
     .string()
-    .min(1, 'E-mail é obrigatório')
-    .email('E-mail inválido'),
+    .min(1, 'E-mail é obrigatório'),
   phone: z
     .string()
-    .min(1, 'Telefone é obrigatório')
-    .refine(
-      (value) => /^\(\d{2}\)\s\d{5}-\d{4}$/.test(value),
-      'Telefone deve estar no formato (XX) XXXXX-XXXX'
-    ),
+    .min(1, 'Telefone é obrigatório'),
   cargo: z
     .string()
-    .min(1, 'Cargo é obrigatório')
-    .max(100, 'Cargo deve ter no máximo 100 caracteres'),
+    .min(1, 'Cargo é obrigatório'),
   department: z
     .string()
-    .min(1, 'Departamento é obrigatório')
-    .max(100, 'Departamento deve ter no máximo 100 caracteres'),
+    .min(1, 'Departamento é obrigatório'),
   birthDate: z
     .string()
-    .min(1, 'Data de nascimento é obrigatória')
-    .refine(
-      (date) => !isNaN(new Date(date).getTime()),
-      'Data de nascimento inválida'
-    )
-    .refine(
-      (date) => calculateAge(date) >= 18,
-      'Deve ter no mínimo 18 anos'
-    ),
+    .min(1, 'Data de nascimento é obrigatória'),
   hireDate: z
     .string()
-    .min(1, 'Data de admissão é obrigatória')
-    .refine(
-      (date) => !isNaN(new Date(date).getTime()),
-      'Data de admissão inválida'
-    )
-    .refine(
-      (date) => new Date(date) <= new Date(),
-      'Data de admissão não pode ser no futuro'
-    ),
+    .min(1, 'Data de admissão é obrigatória'),
   salary: z
-    .number()
-    .min(0.01, 'Salário deve ser maior que 0')
-    .refine(
-      (value) => /^\d+(\.\d{1,2})?$/.test(value.toFixed(2)),
-      'Salário deve ter no máximo 2 casas decimais'
-    ),
+    .union([z.number(), z.string()])
+    .transform((val) => typeof val === 'string' ? parseFloat(val) : val),
   address: z
     .string()
-    .min(1, 'Endereço é obrigatório')
-    .min(5, 'Endereço deve ter no mínimo 5 caracteres')
-    .max(200, 'Endereço deve ter no máximo 200 caracteres'),
+    .min(1, 'Endereço é obrigatório'),
 });
 
 // Schema para atualizar funcionário (todos opcionais)

@@ -58,62 +58,38 @@ export const createEmployeeSchema = z
   .object({
     name: z
       .string()
-      .min(1, 'Nome é obrigatório')
-      .min(3, 'Nome deve ter no mínimo 3 caracteres')
-      .max(100, 'Nome deve ter no máximo 100 caracteres'),
+      .min(1, 'Nome é obrigatório'),
     cpf: z
       .string()
-      .min(1, 'CPF é obrigatório')
-      .refine(
-        (cpf) => validateCPF(cpf),
-        'CPF inválido. Use o formato XXX.XXX.XXX-XX'
-      ),
+      .min(1, 'CPF é obrigatório'),
     rg: z
       .string()
-      .min(1, 'RG é obrigatório')
-      .min(5, 'RG deve ter no mínimo 5 caracteres'),
+      .min(1, 'RG é obrigatório'),
     email: z
       .string()
-      .min(1, 'E-mail é obrigatório')
-      .email('E-mail inválido'),
+      .min(1, 'E-mail é obrigatório'),
     phone: z
       .string()
-      .min(1, 'Telefone é obrigatório')
-      .regex(
-        /^(\(\d{2}\)\s?)?(\d{4,5})-(\d{4})$/,
-        'Telefone inválido. Use o formato (XX) XXXXX-XXXX ou (XX) XXXX-XXXX'
-      ),
+      .min(1, 'Telefone é obrigatório'),
     cargo: z
       .string()
-      .min(1, 'Cargo é obrigatório')
-      .min(2, 'Cargo deve ter no mínimo 2 caracteres'),
+      .min(1, 'Cargo é obrigatório'),
     department: z
       .string()
-      .min(1, 'Departamento é obrigatório')
-      .min(2, 'Departamento deve ter no mínimo 2 caracteres'),
+      .min(1, 'Departamento é obrigatório'),
     birthDate: z
-      .union([z.string().datetime(), z.date()])
-      .transform((val) => new Date(val))
-      .refine(
-        (date) => validateMinAge(date),
-        'Funcionário deve ter no mínimo 18 anos'
-      ),
+      .union([z.string(), z.date()])
+      .transform((val) => new Date(val)),
     hireDate: z
-      .union([z.string().datetime(), z.date()])
-      .transform((val) => new Date(val))
-      .refine(
-        (date) => date <= new Date(),
-        'Data de admissão não pode ser no futuro'
-      ),
+      .union([z.string(), z.date()])
+      .transform((val) => new Date(val)),
     salary: z
-      .number()
-      .min(0.01, 'Salário deve ser maior que zero')
-      .refine((val) => val > 0, 'Salário inválido'),
+      .union([z.number(), z.string()])
+      .transform((val) => typeof val === 'string' ? parseFloat(val) : val)
+      .refine((val) => !isNaN(val), 'Salário deve ser um número válido'),
     address: z
       .string()
-      .min(1, 'Endereço é obrigatório')
-      .min(5, 'Endereço deve ter no mínimo 5 caracteres')
-      .max(200, 'Endereço deve ter no máximo 200 caracteres'),
+      .min(1, 'Endereço é obrigatório'),
   })
   .strict();
 

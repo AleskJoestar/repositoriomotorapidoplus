@@ -1,5 +1,5 @@
 export interface Employee {
-  id: string;
+  id: number;
   name: string;
   cpf: string;
   rg: string;
@@ -35,5 +35,5 @@ export interface UpdateEmployeeRequest extends Partial<CreateEmployeeRequest> {}
 export interface EmployeeFilters {
   cargo?: string;
   department?: string;
-  status?: 'Ativo' | 'Inativo';
+  status?: 'Ativo' | 'Inativo' | 'todos';
 }

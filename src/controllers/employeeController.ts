@@ -33,10 +33,7 @@ export const createEmployeeController = async (
     // Criar funcionário
     const employee = await createEmployee(validatedData, String(req.userId));
 
-    res.status(201).json({
-      message: 'Funcionário cadastrado com sucesso',
-      employee,
-    });
+    res.status(201).json(employee);
   } catch (error) {
     if (error instanceof ZodError) {
       res.status(400).json({
@@ -84,11 +81,7 @@ export const getAllEmployeesController = async (
     // Buscar funcionários
     const employees = await getAllEmployees(filters);
 
-    res.status(200).json({
-      message: 'Funcionários recuperados com sucesso',
-      total: employees.length,
-      employees,
-    });
+    res.status(200).json(employees);
   } catch (error) {
     if (error instanceof Error) {
       res.status(500).json({ error: error.message });
@@ -132,11 +125,7 @@ export const getEmployeeByIdController = async (
     // Buscar logs de auditoria
     const auditLogs = await getAuditLogs(id);
 
-    res.status(200).json({
-      message: 'Funcionário recuperado com sucesso',
-      employee,
-      auditLogs,
-    });
+    res.status(200).json(employee);
   } catch (error) {
     if (error instanceof Error) {
       res.status(500).json({ error: error.message });
@@ -175,10 +164,7 @@ export const updateEmployeeController = async (
     // Atualizar funcionário
     const employee = await updateEmployee(id, validatedData, String(req.userId));
 
-    res.status(200).json({
-      message: 'Funcionário atualizado com sucesso',
-      employee,
-    });
+    res.status(200).json(employee);
   } catch (error) {
     if (error instanceof ZodError) {
       res.status(400).json({
@@ -227,10 +213,7 @@ export const deleteEmployeeController = async (
     // Deletar funcionário (exclusão lógica)
     const employee = await deleteEmployee(id, String(req.userId));
 
-    res.status(200).json({
-      message: 'Funcionário inativado com sucesso',
-      employee,
-    });
+    res.status(200).json(employee);
   } catch (error) {
     if (error instanceof Error) {
       const statusCode = (error as any).statusCode || 500;
