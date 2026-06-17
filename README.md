@@ -60,9 +60,34 @@ O MotoRapido PLUS foi desenvolvido com o objetivo de:
   - CORS e Helmet configurados
   - Variáveis de ambiente protegidas
 
+### Módulo 2: Gerenciamento de Funcionários (Implementado ✅)
+
+- ✅ **Cadastrar Funcionário** (RF03)
+  - Formulário com 3 seções (Dados Pessoais, Profissionais, Contato)
+  - Validação de CPF (formato e duplicidade)
+  - Validação de email, telefone, datas
+  - Status padrão: Ativo
+
+- ✅ **Editar Funcionário** (RF04)
+  - Atualização de dados (CPF desabilitado)
+  - Validação de duplicidade de email/CPF
+  - Log de auditoria com usuário e timestamp
+  - Partial update suportado
+
+- ✅ **Excluir Funcionário** (RF05)
+  - Exclusão lógica (Status = Inativo)
+  - Histórico preservado
+  - Modal de confirmação
+  - Dados não reutilizáveis enquanto inativo
+
+- ✅ **Relatório de Funcionários** (RF06)
+  - Filtros: Cargo, Departamento, Status, Período
+  - Exportação em PDF e XLSX
+  - Layout profissional com cabeçalho e rodapé
+  - Sumário estatístico
+
 ### Próximos Módulos
 
-- 🚀 Módulo 2: Gerenciamento de Funcionários (RF03-RF06)
 - 🚀 Módulo 3: Gerenciamento de Peças/Estoque (RF07-RF10)
 
 ---
@@ -379,23 +404,20 @@ Ver [ENTREGA_FINAL.md](ENTREGA_FINAL.md#checklist-pré-produção) para checklis
 
 ## 🚀 Próximos Módulos
 
-### Módulo 2: Gerenciamento de Funcionários (RF03-RF06)
-
-**Funcionalidades:**
-- RF03: Cadastrar Funcionário (CPF, salário, dados pessoais)
-- RF04: Editar Funcionário
-- RF05: Excluir Funcionário (exclusão lógica)
-- RF06: Relatório de Funcionários (PDF/XLSX)
-
-**Estimativa:** 40-50 Story Points | 3-4 semanas
-
 ### Módulo 3: Gerenciamento de Peças/Estoque (RF07-RF10)
 
 **Funcionalidades:**
-- RF07: Cadastrar Peça
+- RF07: Cadastrar Peça (código único, categoria, quantidade, localização)
 - RF08: Editar Peça (com log de auditoria)
-- RF09: Excluir Peça (exclusão lógica)
-- RF10: Relatório de Peças (PDF/XLSX)
+- RF09: Excluir Peça (exclusão lógica com validação de histórico)
+- RF10: Relatório de Peças (PDF/XLSX com alerta de estoque baixo)
+
+**Características:**
+- Validação de combinação única (Nome + Fabricante)
+- Log de auditoria automático em edições
+- Prevenção de exclusão física se houver histórico de movimentação
+- Filtros: Categoria, Fabricante, Status, Alerta de Estoque Baixo
+- Exportação profissional em PDF e XLSX
 
 **Estimativa:** 45-55 Story Points | 4-5 semanas
 
@@ -473,8 +495,8 @@ Este projeto é privado e desenvolvido para MotoRapido PLUS.
 | Módulo | Status | Qualidade | Data |
 |--------|--------|-----------|------|
 | Módulo 1: Autenticação | ✅ Completo | ⭐⭐⭐⭐⭐ | 17/06/2026 |
-| Módulo 2: Funcionários | 🚀 Próximo | — | — |
-| Módulo 3: Peças/Estoque | 🚀 Futuro | — | — |
+| Módulo 2: Funcionários | ✅ Completo | ⭐⭐⭐⭐⭐ | 17/06/2026 |
+| Módulo 3: Peças/Estoque | 🚀 Próximo | — | — |
 
 ---
 
