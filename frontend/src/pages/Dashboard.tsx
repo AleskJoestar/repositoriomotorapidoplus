@@ -17,9 +17,17 @@ export const Dashboard: React.FC = () => {
       <nav className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">MotoRapido PLUS</h1>
-          <Button variant="secondary" onClick={handleLogout}>
-            Sair
-          </Button>
+          <div className="flex gap-4">
+            <button
+              onClick={() => navigate('/employees')}
+              className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+            >
+              Funcionários
+            </button>
+            <Button variant="secondary" onClick={handleLogout}>
+              Sair
+            </Button>
+          </div>
         </div>
       </nav>
       <main className="max-w-7xl mx-auto px-4 py-8">

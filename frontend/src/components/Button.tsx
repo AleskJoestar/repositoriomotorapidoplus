@@ -6,7 +6,7 @@ interface ButtonProps {
   type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
   loading?: boolean;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'danger';
   className?: string;
 }
 
@@ -23,6 +23,8 @@ export const Button: React.FC<ButtonProps> = ({
   const variantClass =
     variant === 'primary'
       ? 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400'
+      : variant === 'danger'
+      ? 'bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-400'
       : 'bg-gray-200 text-gray-800 hover:bg-gray-300 disabled:bg-gray-100';
 
   return (
