@@ -1,14 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import { useEmployees } from '@/hooks/useEmployees';
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import { Toast } from '@/components/Toast';
+import { Button } from '@/components/Button';
 import { Employee, EmployeeFilters } from '@/types/employee';
 
 export const Employees: React.FC = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const { employees, loading, error, fetchEmployees, deleteEmployee } = useEmployees();
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
   const [deleteModal, setDeleteModal] = useState<{ employee: Employee; open: boolean }>({
     employee: null as any,
     open: false,
@@ -73,20 +81,40 @@ export const Employees: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Cabeçalho */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Funcionários</h1>
-            <p className="text-gray-600 mt-1">Gerencie os funcionários da oficina</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Navbar */}
+      <nav className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">MotoRapido PLUS</h1>
+          <div className="flex gap-4">
+            <Button 
+              variant="secondary" 
+              onClick={() => navigate('/dashboard')}
+            >
+              ← Voltar ao Início
+            </Button>
+            <Button variant="secondary" onClick={handleLogout}>
+              Sair
+            </Button>
           </div>
-          <button
-            onClick={() => navigate('/employees/new')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-          >
-            + Novo Funcionário
-          </button>
+        </div>
+      </nav>
+
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Cabeçalho */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Funcionários</h1>
+              <p className="text-gray-600 mt-1">Gerencie os funcionários da oficina</p>
+            </div>
+            <button
+              onClick={() => navigate('/employees/new')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              + Novo Funcionário
+            </button>
+          </div>
         </div>
 
         {/* Filtros */}
