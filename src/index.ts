@@ -1,8 +1,10 @@
+import 'dotenv/config';
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import authRoutes from '@/routes/auth';
 import employeeRoutes from '@/routes/employees';
+import partRoutes from '@/routes/parts';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -23,6 +25,9 @@ app.use('/api/auth', authRoutes);
 
 // Rotas de funcionários
 app.use('/api', employeeRoutes);
+
+// Rotas de peças
+app.use('/api', partRoutes);
 
 // Tratamento de rota não encontrada
 app.use((req: Request, res: Response) => {

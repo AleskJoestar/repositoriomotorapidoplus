@@ -7,6 +7,8 @@ import { Dashboard } from '@/pages/Dashboard';
 import { ProtectedRoute } from '@/pages/ProtectedRoute';
 import { Employees } from '@/pages/Employees';
 import { EmployeeFormPage } from '@/pages/EmployeeFormPage';
+import { Parts } from '@/pages/Parts';
+import { PartFormPage } from '@/pages/PartFormPage';
 
 const App: React.FC = () => {
   return (
@@ -44,6 +46,30 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <EmployeeFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/parts"
+            element={
+              <ProtectedRoute>
+                <Parts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/parts/new"
+            element={
+              <ProtectedRoute>
+                <PartFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/parts/:id/edit"
+            element={
+              <ProtectedRoute>
+                <PartFormPage />
               </ProtectedRoute>
             }
           />

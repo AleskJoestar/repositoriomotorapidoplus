@@ -88,3 +88,60 @@ export interface AuditLog {
   userId: string;
   createdAt: Date;
 }
+
+// ============ PART TYPES ============
+
+export interface Part {
+  id: number;
+  code: string;
+  name: string;
+  category: string;
+  quantity: number;
+  description?: string | null;
+  manufacturer?: string | null;
+  serialNumber?: string | null;
+  location?: string | null;
+  minQuantity?: number | null;
+  status: "Ativo" | "Inativo";
+  createdAt: Date;
+  updatedAt: Date;
+  inactivatedAt?: Date | null;
+}
+
+export interface CreatePartRequest {
+  name: string;
+  category: string;
+  quantity: number;
+  description?: string;
+  manufacturer?: string;
+  serialNumber?: string;
+  location?: string;
+  minQuantity?: number;
+}
+
+export interface UpdatePartRequest {
+  name?: string;
+  category?: string;
+  quantity?: number;
+  description?: string;
+  manufacturer?: string;
+  serialNumber?: string;
+  location?: string;
+  minQuantity?: number;
+}
+
+export interface PartFilters {
+  category?: string;
+  manufacturer?: string;
+  status?: string;
+  lowStock?: string;
+}
+
+export interface PartAuditLog {
+  id: string;
+  partId: number;
+  action: "CREATE" | "UPDATE" | "DELETE";
+  changedFields: Record<string, unknown>;
+  userId: string;
+  createdAt: Date;
+}

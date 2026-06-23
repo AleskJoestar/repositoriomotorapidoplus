@@ -19,20 +19,23 @@ export const Dashboard: React.FC = () => {
       icon: '👥',
       color: 'bg-blue-50 border-blue-200 hover:bg-blue-100',
       onClick: () => navigate('/employees'),
+      enabled: true,
     },
     {
       title: 'Usuários',
       description: 'Gerencie acesso e permissões',
       icon: '🔐',
       color: 'bg-purple-50 border-purple-200 hover:bg-purple-100',
-      onClick: () => {}, // Placeholder para futura implementação
+      onClick: () => {},
+      enabled: false,
     },
     {
       title: 'Estoque',
       description: 'Controle de peças e inventário',
       icon: '📦',
       color: 'bg-green-50 border-green-200 hover:bg-green-100',
-      onClick: () => {}, // Placeholder para futura implementação
+      onClick: () => navigate('/parts'),
+      enabled: true,
     },
   ];
 
@@ -57,15 +60,15 @@ export const Dashboard: React.FC = () => {
             <button
               key={module.title}
               onClick={module.onClick}
-              disabled={module.title !== 'Funcionários'}
+              disabled={!module.enabled}
               className={`p-6 rounded-lg border-2 transition-all ${module.color} ${
-                module.title !== 'Funcionários' ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                !module.enabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
               }`}
             >
               <div className="text-4xl mb-3">{module.icon}</div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">{module.title}</h3>
               <p className="text-gray-600 text-sm">{module.description}</p>
-              {module.title !== 'Funcionários' && (
+              {!module.enabled && (
                 <span className="inline-block mt-4 text-xs bg-gray-300 text-gray-700 px-2 py-1 rounded">
                   Em breve
                 </span>

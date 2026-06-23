@@ -56,3 +56,48 @@ model AuditLog {
 
   @@map("audit_logs")
 }
+
+model Part {
+  id              Int      @id @default(autoincrement())
+  code            String   @unique
+  name            String
+  category        String
+  quantity        Int
+  description     String?
+  manufacturer    String?
+  serialNumber    String?
+  location        String?
+  minQuantity     Int?
+  status          String   @default("Ativo") // "Ativo" ou "Inativo"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  inactivatedAt   DateTime?
+
+  auditLogs       PartAuditLog[]
+  stockMovements  StockMovement[]
+
+  @@map("parts")
+}
+
+model PartAuditLog {
+  id              String   @id @default(cuid())
+  partId          Int
+  part            Part     @relation(fields: [partId], references: [id])
+  action          String   // "CREATE", "UPDATE", "DELETE"
+  changedFields   String
+  userId          String
+  createdAt       DateTime @default(now())
+
+  @@map("part_audit_logs")
+}
+
+model StockMovement {
+  id              String   @id @default(cuid())
+  partId          Int
+  part            Part     @relation(fields: [partId], references: [id])
+  type            String   // "ENTRADA" ou "SAIDA"
+  quantity        Int
+  createdAt       DateTime @default(now())
+
+  @@map("stock_movements")
+}
