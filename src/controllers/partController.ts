@@ -6,6 +6,8 @@ import {
   getPartById,
   updatePart,
   deletePart,
+  reactivatePart,
+  getPartAuditLogs,
 } from '@/services/partService';
 import {
   generatePartsPdf,
@@ -149,6 +151,56 @@ export const deletePartController = async (
     const result = await deletePart(id, String(req.userId));
 
     res.status(200).json(result);
+  } catch (error) {
+    if (error instanceof Error) {
+      const statusCode =
+        (error as Error & { statusCode?: number }).statusCode || 500;
+      res.status(statusCode).json({ error: error.message });
+      return;
+    }
+
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+export const reactivatePartController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Autenticação necessária' });
+      return;
+    }
+
+    const { id } = req.params;
+    const part = await reactivatePart(id, String(req.userId));
+    res.status(200).json(part);
+  } catch (error) {
+    if (error instanceof Error) {
+      const statusCode =
+        (error as Error & { statusCode?: number }).statusCode || 500;
+      res.status(statusCode).json({ error: error.message });
+      return;
+    }
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+export const getPartAuditLogsController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Autenticação necessária' });
+      return;
+    }
+
+    const { id } = req.params;
+    const logs = await getPartAuditLogs(id);
+
+    res.status(200).json(logs);
   } catch (error) {
     if (error instanceof Error) {
       const statusCode =

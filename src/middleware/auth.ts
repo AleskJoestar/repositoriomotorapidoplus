@@ -6,6 +6,7 @@ declare global {
     interface Request {
       userId?: number;
       userEmail?: string;
+      accessType?: string;
     }
   }
 }
@@ -29,9 +30,11 @@ export const authenticateToken = (
     const decoded = jwt.verify(token, JWT_SECRET) as {
       id: number;
       email: string;
+      accessType?: string;
     };
     req.userId = decoded.id;
     req.userEmail = decoded.email;
+    req.accessType = decoded.accessType;
     next();
   } catch (err) {
     res.status(403).json({ error: 'Token inválido ou expirado' });

@@ -1,0 +1,210 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { useDepartments } from '@/hooks/useDepartments';
+import { Toast } from '@/components/Toast';
+import { Button } from '@/components/Button';
+import { Department } from '@/services/departmentService';
+
+export const Departments: React.FC = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const { departments, loading, error, fetchDepartments, inactivateDepartment, reactivateDepartment } = useDepartments();
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ department: Department; open: boolean }>({
+    department: null as any,
+    open: false,
+  });
+  const [deleting, setDeleting] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
+
+  useEffect(() => {
+    fetchDepartments(true);
+  }, []);
+
+  useEffect(() => {
+    if (error) setToast({ message: error, type: 'error' });
+  }, [error]);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const handleConfirmInactivate = async () => {
+    if (!deleteModal.department) return;
+    setDeleting(true);
+    try {
+      await inactivateDepartment(String(deleteModal.department.id));
+      setToast({ message: 'Departamento inativado com sucesso', type: 'success' });
+      setDeleteModal({ department: null as any, open: false });
+    } catch (err: any) {
+      setToast({
+        message: err.response?.data?.error || 'Erro ao inativar departamento',
+        type: 'error',
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleReactivate = async (dept: Department) => {
+    setReactivating(true);
+    try {
+      await reactivateDepartment(String(dept.id));
+      setToast({ message: 'Departamento reativado com sucesso', type: 'success' });
+    } catch (err: any) {
+      setToast({
+        message: err.response?.data?.error || 'Erro ao reativar departamento',
+        type: 'error',
+      });
+    } finally {
+      setReactivating(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">MotoRapido PLUS</h1>
+          <div className="flex gap-4">
+            <Button variant="secondary" onClick={() => navigate('/dashboard')}>
+              ← Voltar ao Início
+            </Button>
+            <Button variant="secondary" onClick={handleLogout}>
+              Sair
+            </Button>
+          </div>
+        </div>
+      </nav>
+
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Departamentos</h1>
+              <p className="text-gray-600 mt-1">Gerencie departamentos e cargos</p>
+            </div>
+            <button
+              onClick={() => navigate('/departments/new')}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              + Novo Departamento
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : departments.length === 0 ? (
+              <div className="flex justify-center items-center h-64 text-gray-500">
+                <p>Nenhum departamento encontrado</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-100 border-b">
+                    <tr>
+                      <th className="px-6 py-3 text-left">ID</th>
+                      <th className="px-6 py-3 text-left">Nome</th>
+                      <th className="px-6 py-3 text-left">Cargos</th>
+                      <th className="px-6 py-3 text-left">Status</th>
+                      <th className="px-6 py-3 text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {departments.map((dept) => (
+                      <tr key={dept.id} className="border-b hover:bg-gray-50">
+                        <td className="px-6 py-3">{dept.id}</td>
+                        <td className="px-6 py-3 font-medium">{dept.name}</td>
+                        <td className="px-6 py-3">
+                          {dept.positions.map((p) => p.name).join(', ') || '-'}
+                        </td>
+                        <td className="px-6 py-3">
+                          <span
+                            className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                              dept.status === 'Ativo'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {dept.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3 text-center">
+                          <div className="flex justify-center gap-2">
+                            <button
+                              onClick={() => navigate(`/departments/${dept.id}/edit`)}
+                              className="w-8 h-8 rounded-lg hover:bg-blue-100"
+                              title="Editar"
+                            >
+                              ✏️
+                            </button>
+                            {dept.status === 'Ativo' ? (
+                              <button
+                                onClick={() => setDeleteModal({ department: dept, open: true })}
+                                className="w-8 h-8 rounded-lg hover:bg-red-100"
+                                title="Inativar"
+                              >
+                                🗑️
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleReactivate(dept)}
+                                disabled={reactivating}
+                                className="w-8 h-8 rounded-lg hover:bg-green-100"
+                                title="Reativar"
+                              >
+                                ♻️
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {deleteModal.open && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+            onClick={() => setDeleteModal({ department: null as any, open: false })}
+          >
+            <div
+              className="bg-white rounded-lg shadow-lg p-6 w-96 max-w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Confirmar Inativação</h2>
+              <p className="text-gray-600 mb-6">
+                Deseja inativar o departamento <strong>{deleteModal.department.name}</strong>?
+              </p>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="secondary"
+                  onClick={() => setDeleteModal({ department: null as any, open: false })}
+                  disabled={deleting}
+                >
+                  Cancelar
+                </Button>
+                <Button variant="danger" onClick={handleConfirmInactivate} loading={deleting}>
+                  Inativar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {toast && (
+          <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+        )}
+      </div>
+    </div>
+  );
+};

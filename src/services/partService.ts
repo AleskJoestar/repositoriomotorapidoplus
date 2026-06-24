@@ -4,37 +4,65 @@ import {
   CreatePartRequest,
   UpdatePartRequest,
   PartFilters,
+  PartAuditLog,
 } from '@/types';
+import { LOW_STOCK_THRESHOLD } from '@/types/sale';
 
 const prisma = new PrismaClient();
 
-const formatPart = (part: {
+const partInclude = {
+  category: { select: { name: true } },
+  manufacturer: { select: { name: true } },
+} as const;
+
+type PartWithRelations = {
   id: number;
   code: string;
   name: string;
-  category: string;
+  categoryId: number;
+  manufacturerId: number;
   quantity: number;
   description: string | null;
-  manufacturer: string | null;
   serialNumber: string | null;
   location: string | null;
-  minQuantity: number | null;
+  minQuantity: number;
+  price: number;
   status: string;
   createdAt: Date;
   updatedAt: Date;
   inactivatedAt: Date | null;
-}): Part => ({
-  ...part,
+  category?: { name: string };
+  manufacturer?: { name: string };
+};
+
+const formatPart = (part: PartWithRelations): Part => ({
+  id: part.id,
+  code: part.code,
+  name: part.name,
+  categoryId: part.categoryId,
+  categoryName: part.category?.name ?? '',
+  manufacturerId: part.manufacturerId,
+  manufacturerName: part.manufacturer?.name ?? '',
+  quantity: part.quantity,
+  description: part.description,
+  serialNumber: part.serialNumber,
+  location: part.location,
+  minQuantity: part.minQuantity,
+  price: Number(part.price ?? 0),
   status: part.status as Part['status'],
+  createdAt: part.createdAt,
+  updatedAt: part.updatedAt,
+  inactivatedAt: part.inactivatedAt,
 });
 
 const generatePartCode = async (): Promise<string> => {
-  const count = await prisma.part.count();
-  return `P-${String(count + 1).padStart(6, '0')}`;
+  const lastPart = await prisma.part.findFirst({
+    orderBy: { id: 'desc' },
+    select: { id: true },
+  });
+  const nextId = (lastPart?.id ?? 0) + 1;
+  return `P-${String(nextId).padStart(6, '0')}`;
 };
-
-const normalizeManufacturer = (manufacturer?: string | null): string =>
-  manufacturer?.trim() || '';
 
 const createPartAuditLog = async (
   partId: number,
@@ -56,23 +84,57 @@ const createPartAuditLog = async (
   }
 };
 
+const validateCategoryAndManufacturer = async (
+  categoryId: number,
+  manufacturerId: number
+): Promise<void> => {
+  const [category, manufacturer] = await Promise.all([
+    prisma.category.findUnique({ where: { id: categoryId } }),
+    prisma.manufacturer.findUnique({ where: { id: manufacturerId } }),
+  ]);
+
+  if (!category) {
+    const error = new Error('Categoria não encontrada');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  if (category.status !== 'Ativo') {
+    const error = new Error('Categoria inativa não pode ser vinculada');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  if (!manufacturer) {
+    const error = new Error('Fabricante não encontrado');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  if (manufacturer.status !== 'Ativo') {
+    const error = new Error('Fabricante inativo não pode ser vinculado');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+};
+
 const checkDuplicateNameManufacturer = async (
   name: string,
-  manufacturer?: string | null,
+  manufacturerId: number,
   excludeId?: number
 ): Promise<boolean> => {
   const normalizedName = name.trim().toLowerCase();
-  const normalizedManufacturer = normalizeManufacturer(manufacturer).toLowerCase();
 
   const parts = await prisma.part.findMany({
-    where: excludeId ? { NOT: { id: excludeId } } : undefined,
-    select: { id: true, name: true, manufacturer: true },
+    where: {
+      manufacturerId,
+      ...(excludeId ? { NOT: { id: excludeId } } : {}),
+    },
+    select: { id: true, name: true },
   });
 
   return parts.some(
-    (part) =>
-      part.name.trim().toLowerCase() === normalizedName &&
-      normalizeManufacturer(part.manufacturer).toLowerCase() === normalizedManufacturer
+    (part) => part.name.trim().toLowerCase() === normalizedName
   );
 };
 
@@ -80,9 +142,11 @@ export const createPart = async (
   data: CreatePartRequest,
   userId: string
 ): Promise<Part> => {
+  await validateCategoryAndManufacturer(data.categoryId, data.manufacturerId);
+
   const isDuplicate = await checkDuplicateNameManufacturer(
     data.name,
-    data.manufacturer
+    data.manufacturerId
   );
 
   if (isDuplicate) {
@@ -95,31 +159,21 @@ export const createPart = async (
 
   const code = await generatePartCode();
 
-  const part = await prisma.$transaction(async (tx) => {
-    const created = await tx.part.create({
-      data: {
-        code,
-        name: data.name.trim(),
-        category: data.category.trim(),
-        quantity: data.quantity,
-        description: data.description?.trim() || null,
-        manufacturer: data.manufacturer?.trim() || null,
-        serialNumber: data.serialNumber?.trim() || null,
-        location: data.location?.trim() || null,
-        minQuantity: data.minQuantity ?? null,
-        status: 'Ativo',
-      },
-    });
-
-    await tx.stockMovement.create({
-      data: {
-        partId: created.id,
-        type: 'ENTRADA',
-        quantity: data.quantity,
-      },
-    });
-
-    return created;
+  const part = await prisma.part.create({
+    data: {
+      code,
+      name: data.name.trim(),
+      categoryId: data.categoryId,
+      manufacturerId: data.manufacturerId,
+      quantity: data.quantity,
+      description: data.description?.trim() || null,
+      serialNumber: data.serialNumber?.trim() || null,
+      location: data.location?.trim() || null,
+      minQuantity: data.minQuantity,
+      price: data.price ?? 0,
+      status: 'Ativo',
+    },
+    include: partInclude,
   });
 
   await createPartAuditLog(
@@ -142,26 +196,22 @@ export const getAllParts = async (filters?: PartFilters): Promise<Part[]> => {
   }
 
   if (filters?.category?.trim()) {
-    where.category = { contains: filters.category.trim() };
+    where.category = { name: { contains: filters.category.trim() } };
   }
 
   if (filters?.manufacturer?.trim()) {
-    where.manufacturer = { contains: filters.manufacturer.trim() };
+    where.manufacturer = { name: { contains: filters.manufacturer.trim() } };
   }
 
   const parts = await prisma.part.findMany({
     where,
     orderBy: { createdAt: 'desc' },
+    include: partInclude,
   });
 
   if (filters?.lowStock === 'true') {
     return parts
-      .filter(
-        (part) =>
-          part.minQuantity !== null &&
-          part.minQuantity !== undefined &&
-          part.quantity < part.minQuantity
-      )
+      .filter((part) => part.quantity <= LOW_STOCK_THRESHOLD)
       .map(formatPart);
   }
 
@@ -172,7 +222,10 @@ export const getPartById = async (id: string): Promise<Part | null> => {
   const numericId = parseInt(id, 10);
   if (Number.isNaN(numericId)) return null;
 
-  const part = await prisma.part.findUnique({ where: { id: numericId } });
+  const part = await prisma.part.findUnique({
+    where: { id: numericId },
+    include: partInclude,
+  });
   return part ? formatPart(part) : null;
 };
 
@@ -195,13 +248,18 @@ export const updatePart = async (
     throw error;
   }
 
+  const nextCategoryId = data.categoryId ?? existing.categoryId;
+  const nextManufacturerId = data.manufacturerId ?? existing.manufacturerId;
+
+  if (data.categoryId !== undefined || data.manufacturerId !== undefined) {
+    await validateCategoryAndManufacturer(nextCategoryId, nextManufacturerId);
+  }
+
   const nextName = data.name ?? existing.name;
-  const nextManufacturer =
-    data.manufacturer !== undefined ? data.manufacturer : existing.manufacturer;
 
   const isDuplicate = await checkDuplicateNameManufacturer(
     nextName,
-    nextManufacturer,
+    nextManufacturerId,
     numericId
   );
 
@@ -219,8 +277,9 @@ export const updatePart = async (
   Object.entries(data).forEach(([key, value]) => {
     if (value !== undefined) {
       if (typeof value === 'string') {
-        updateData[key] = value.trim() || null;
-        changedFields[key] = value.trim() || null;
+        const trimmed = value.trim();
+        updateData[key] = trimmed || null;
+        changedFields[key] = trimmed || null;
       } else {
         updateData[key] = value;
         changedFields[key] = value;
@@ -232,6 +291,7 @@ export const updatePart = async (
     const result = await tx.part.update({
       where: { id: numericId },
       data: updateData,
+      include: partInclude,
     });
 
     if (data.quantity !== undefined && data.quantity !== existing.quantity) {
@@ -268,57 +328,139 @@ export const deletePart = async (
     throw error;
   }
 
-  const existing = await prisma.part.findUnique({ where: { id: numericId } });
+  const existing = await prisma.part.findUnique({
+    where: { id: numericId },
+    include: partInclude,
+  });
   if (!existing) {
     const error = new Error('Peça não encontrada');
     (error as Error & { statusCode?: number }).statusCode = 404;
     throw error;
   }
 
-  const movementCount = await prisma.stockMovement.count({
-    where: { partId: numericId },
-  });
-
-  if (movementCount > 0) {
-    if (existing.status === 'Inativo') {
-      return {
-        part: formatPart(existing),
-        message: 'Peça já está inativa',
-      };
-    }
-
-    const inactivated = await prisma.part.update({
-      where: { id: numericId },
-      data: {
-        status: 'Inativo',
-        inactivatedAt: new Date(),
-      },
-    });
-
-    await createPartAuditLog(
-      numericId,
-      'DELETE',
-      {
-        status: 'Inativo',
-        inactivatedAt: new Date().toISOString(),
-        reason: 'Exclusão lógica — peça com histórico de movimentações',
-      },
-      userId
-    );
-
+  if (existing.status === 'Inativo') {
     return {
-      part: formatPart(inactivated),
-      message:
-        'Não é possível excluir peça com histórico de movimentações. Peça inativada com sucesso.',
+      part: formatPart(existing),
+      message: 'Peça já está inativa',
     };
   }
 
-  await prisma.part.delete({ where: { id: numericId } });
+  const inactivated = await prisma.part.update({
+    where: { id: numericId },
+    data: {
+      status: 'Inativo',
+      inactivatedAt: new Date(),
+    },
+    include: partInclude,
+  });
+
+  await createPartAuditLog(
+    numericId,
+    'DELETE',
+    {
+      status: 'Inativo',
+      inactivatedAt: new Date().toISOString(),
+      reason: 'Exclusão lógica — peça inativada',
+    },
+    userId
+  );
 
   return {
-    part: formatPart(existing),
-    message: 'Peça excluída com sucesso',
+    part: formatPart(inactivated),
+    message: 'Peça inativada com sucesso',
   };
+};
+
+export const reactivatePart = async (
+  id: string,
+  userId: string
+): Promise<Part> => {
+  const numericId = parseInt(id, 10);
+  if (Number.isNaN(numericId)) {
+    const error = new Error('ID de peça inválido');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  const existing = await prisma.part.findUnique({
+    where: { id: numericId },
+    include: partInclude,
+  });
+  if (!existing) {
+    const error = new Error('Peça não encontrada');
+    (error as Error & { statusCode?: number }).statusCode = 404;
+    throw error;
+  }
+
+  if (existing.status === 'Ativo') {
+    return formatPart(existing);
+  }
+
+  const reactivated = await prisma.part.update({
+    where: { id: numericId },
+    data: { status: 'Ativo', inactivatedAt: null },
+    include: partInclude,
+  });
+
+  await createPartAuditLog(
+    numericId,
+    'UPDATE',
+    { status: 'Ativo', inactivatedAt: null, reason: 'Reativação' },
+    userId
+  );
+
+  return formatPart(reactivated);
+};
+
+export const getPartAuditLogs = async (
+  id: string
+): Promise<PartAuditLog[]> => {
+  const numericId = parseInt(id, 10);
+  if (Number.isNaN(numericId)) {
+    const error = new Error('ID de peça inválido');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  const part = await prisma.part.findUnique({ where: { id: numericId } });
+  if (!part) {
+    const error = new Error('Peça não encontrada');
+    (error as Error & { statusCode?: number }).statusCode = 404;
+    throw error;
+  }
+
+  const logs = await prisma.partAuditLog.findMany({
+    where: { partId: numericId },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const userIds = [
+    ...new Set(
+      logs
+        .map((log) => parseInt(log.userId, 10))
+        .filter((uid) => !Number.isNaN(uid))
+    ),
+  ];
+
+  const users =
+    userIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, email: true },
+        })
+      : [];
+
+  const userMap = new Map(users.map((user) => [String(user.id), user.email]));
+
+  return logs.map((log) => ({
+    id: log.id,
+    partId: log.partId,
+    action: log.action as PartAuditLog['action'],
+    changedFields: JSON.parse(log.changedFields) as Record<string, unknown>,
+    userId: log.userId,
+    userName: userMap.get(log.userId) || 'Usuário desconhecido',
+    createdAt: log.createdAt,
+  }));
 };
 
 export { getAllParts as getPartsForReport };

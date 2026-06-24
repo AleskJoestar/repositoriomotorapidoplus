@@ -36,7 +36,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-bold text-gray-900 mb-4">
-          Confirmar Exclusão
+          Confirmar Inativação
         </h2>
 
         <p className="text-gray-600 mb-6">

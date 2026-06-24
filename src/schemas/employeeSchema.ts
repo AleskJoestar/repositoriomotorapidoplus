@@ -4,16 +4,12 @@ import { z } from 'zod';
  * Validar CPF: formato XXX.XXX.XXX-XX e dígitos verificadores
  */
 const validateCPF = (cpf: string): boolean => {
-  // Remove caracteres não numéricos
   const cleaned = cpf.replace(/\D/g, '');
 
-  // Validar formato: deve ter 11 dígitos
   if (cleaned.length !== 11) return false;
 
-  // Validar se todos os dígitos são iguais (inválido)
   if (/^(\d)\1{10}$/.test(cleaned)) return false;
 
-  // Calcular primeiro dígito verificador
   let sum = 0;
   for (let i = 0; i < 9; i++) {
     sum += parseInt(cleaned[i]) * (10 - i);
@@ -21,7 +17,6 @@ const validateCPF = (cpf: string): boolean => {
   let remainder = sum % 11;
   const firstDigit = remainder < 2 ? 0 : 11 - remainder;
 
-  // Calcular segundo dígito verificador
   sum = 0;
   for (let i = 0; i < 10; i++) {
     sum += parseInt(cleaned[i]) * (11 - i);
@@ -29,7 +24,6 @@ const validateCPF = (cpf: string): boolean => {
   remainder = sum % 11;
   const secondDigit = remainder < 2 ? 0 : 11 - remainder;
 
-  // Validar dígitos verificadores
   return (
     firstDigit === parseInt(cleaned[9]) &&
     secondDigit === parseInt(cleaned[10])
@@ -52,6 +46,16 @@ const validateMinAge = (birthDate: Date): boolean => {
 };
 
 /**
+ * Schema para validação isolada de CPF
+ */
+export const cpfSchema = z
+  .string()
+  .refine(
+    (cpf) => validateCPF(cpf),
+    'CPF inválido. Use o formato XXX.XXX.XXX-XX'
+  );
+
+/**
  * Schema para criação de funcionário
  */
 export const createEmployeeSchema = z
@@ -59,9 +63,7 @@ export const createEmployeeSchema = z
     name: z
       .string()
       .min(1, 'Nome é obrigatório'),
-    cpf: z
-      .string()
-      .min(1, 'CPF é obrigatório'),
+    cpf: cpfSchema,
     rg: z
       .string()
       .min(1, 'RG é obrigatório'),
@@ -71,15 +73,18 @@ export const createEmployeeSchema = z
     phone: z
       .string()
       .min(1, 'Telefone é obrigatório'),
-    cargo: z
-      .string()
-      .min(1, 'Cargo é obrigatório'),
-    department: z
-      .string()
-      .min(1, 'Departamento é obrigatório'),
+    departmentId: z
+      .number({ invalid_type_error: 'Departamento é obrigatório' })
+      .int('Departamento inválido')
+      .positive('Departamento inválido'),
+    positionId: z
+      .number({ invalid_type_error: 'Cargo é obrigatório' })
+      .int('Cargo inválido')
+      .positive('Cargo inválido'),
     birthDate: z
       .union([z.string(), z.date()])
-      .transform((val) => new Date(val)),
+      .transform((val) => new Date(val))
+      .refine((val) => validateMinAge(val), 'Funcionário deve ter no mínimo 18 anos'),
     hireDate: z
       .union([z.string(), z.date()])
       .transform((val) => new Date(val)),
@@ -90,6 +95,10 @@ export const createEmployeeSchema = z
     address: z
       .string()
       .min(1, 'Endereço é obrigatório'),
+    status: z
+      .enum(['Ativo', 'Inativo'])
+      .optional()
+      .default('Ativo'),
   })
   .strict();
 
@@ -97,18 +106,12 @@ export const createEmployeeSchema = z
  * Schema para atualização de funcionário (todos os campos opcionais)
  */
 export const updateEmployeeSchema = createEmployeeSchema
+  .omit({ status: true })
   .partial()
+  .extend({
+    status: z.enum(['Ativo', 'Inativo']).optional(),
+  })
   .strict();
-
-/**
- * Schema para validação isolada de CPF
- */
-export const cpfSchema = z
-  .string()
-  .refine(
-    (cpf) => validateCPF(cpf),
-    'CPF inválido. Use o formato XXX.XXX.XXX-XX'
-  );
 
 /**
  * Types inferidos automaticamente do Zod

@@ -1,8 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "binary"
 }
 
 datasource db {
@@ -11,15 +9,75 @@ datasource db {
 }
 
 model User {
-  id        Int     @id @default(autoincrement())
-  name      String
-  email     String  @unique
-  password  String  // bcrypt hash
-  status    String  @default("ativo") // "ativo" ou "inativo"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  password      String
+  accessType    String    @default("COMUM")
+  isMasterSeed  Boolean   @default(false)
+  employeeId    Int?      @unique
+  employee      Employee? @relation(fields: [employeeId], references: [id])
+  status        String    @default("Ativo")
+  inactivatedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sales         Sale[]
 
   @@map("users")
+}
+
+model Department {
+  id            Int        @id @default(autoincrement())
+  name          String     @unique
+  status        String     @default("Ativo")
+  inactivatedAt DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  positions     Position[]
+  employees     Employee[]
+
+  @@map("departments")
+}
+
+model Position {
+  id            Int        @id @default(autoincrement())
+  name          String
+  departmentId  Int
+  department    Department @relation(fields: [departmentId], references: [id])
+  status        String     @default("Ativo")
+  inactivatedAt DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  employees     Employee[]
+
+  @@unique([departmentId, name])
+  @@map("positions")
+}
+
+model Manufacturer {
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  cnpj          String?
+  address       String?
+  contact       String?
+  status        String   @default("Ativo")
+  inactivatedAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  parts         Part[]
+
+  @@map("manufacturers")
+}
+
+model Category {
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  status        String   @default("Ativo")
+  inactivatedAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  parts         Part[]
+
+  @@map("categories")
 }
 
 model Employee {
@@ -29,18 +87,21 @@ model Employee {
   rg              String
   email           String
   phone           String
-  cargo           String
-  department      String
+  departmentId    Int
+  department      Department @relation(fields: [departmentId], references: [id])
+  positionId      Int
+  position        Position @relation(fields: [positionId], references: [id])
   birthDate       DateTime
   hireDate        DateTime
   salary          Float
   address         String
-  status          String   @default("Ativo") // "Ativo" ou "Inativo"
+  status          String   @default("Ativo")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   inactivatedAt   DateTime?
-  
+
   auditLogs       AuditLog[]
+  user            User?
 
   @@map("employees")
 }
@@ -49,32 +110,36 @@ model AuditLog {
   id              String   @id @default(cuid())
   employeeId      Int
   employee        Employee @relation(fields: [employeeId], references: [id])
-  action          String   // "CREATE", "UPDATE", "DELETE"
-  changedFields   String   // JSON string com as mudanças
-  userId          String   // ID do usuário que fez a ação
+  action          String
+  changedFields   String
+  userId          String
   createdAt       DateTime @default(now())
 
   @@map("audit_logs")
 }
 
 model Part {
-  id              Int      @id @default(autoincrement())
-  code            String   @unique
+  id              Int          @id @default(autoincrement())
+  code            String       @unique
   name            String
-  category        String
+  categoryId      Int
+  category        Category     @relation(fields: [categoryId], references: [id])
+  manufacturerId  Int
+  manufacturer    Manufacturer @relation(fields: [manufacturerId], references: [id])
   quantity        Int
   description     String?
-  manufacturer    String?
   serialNumber    String?
   location        String?
-  minQuantity     Int?
-  status          String   @default("Ativo") // "Ativo" ou "Inativo"
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  minQuantity     Int
+  price           Float        @default(0)
+  status          String       @default("Ativo")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
   inactivatedAt   DateTime?
 
   auditLogs       PartAuditLog[]
   stockMovements  StockMovement[]
+  saleItems       SaleItem[]
 
   @@map("parts")
 }
@@ -83,7 +148,7 @@ model PartAuditLog {
   id              String   @id @default(cuid())
   partId          Int
   part            Part     @relation(fields: [partId], references: [id])
-  action          String   // "CREATE", "UPDATE", "DELETE"
+  action          String
   changedFields   String
   userId          String
   createdAt       DateTime @default(now())
@@ -95,9 +160,40 @@ model StockMovement {
   id              String   @id @default(cuid())
   partId          Int
   part            Part     @relation(fields: [partId], references: [id])
-  type            String   // "ENTRADA" ou "SAIDA"
+  type            String
   quantity        Int
   createdAt       DateTime @default(now())
 
   @@map("stock_movements")
+}
+
+model Sale {
+  id            Int        @id @default(autoincrement())
+  userId        Int
+  user          User       @relation(fields: [userId], references: [id])
+  status        String     @default("ABERTA")
+  paymentMethod String?
+  amountPaid    Float?
+  changeAmount  Float?
+  totalAmount   Float      @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  items         SaleItem[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id         Int      @id @default(autoincrement())
+  saleId     Int
+  sale       Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  partId     Int
+  part       Part     @relation(fields: [partId], references: [id])
+  quantity   Int
+  unitPrice  Float
+  totalPrice Float
+  createdAt  DateTime @default(now())
+
+  @@unique([saleId, partId])
+  @@map("sale_items")
 }

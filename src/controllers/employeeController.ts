@@ -5,13 +5,26 @@ import {
   getEmployeeById,
   updateEmployee,
   deleteEmployee,
-  getAuditLogs,
+  reactivateEmployee,
 } from '@/services/employeeService';
+import {
+  generateEmployeesPdf,
+  generateEmployeesXlsx,
+} from '@/services/employeeReportService';
 import {
   createEmployeeSchema,
   updateEmployeeSchema,
 } from '@/schemas/employeeSchema';
 import { ZodError } from 'zod';
+import { EmployeeFilters } from '@/types';
+
+const parseEmployeeFilters = (query: Request['query']): EmployeeFilters => ({
+  position: (query.position || query.cargo) as string | undefined,
+  department: query.department as string | undefined,
+  status: query.status as string | undefined,
+  hireDateFrom: query.hireDateFrom as string | undefined,
+  hireDateTo: query.hireDateTo as string | undefined,
+});
 
 /**
  * POST /api/employees (RF03 - Cadastro de funcionário)
@@ -71,12 +84,7 @@ export const getAllEmployeesController = async (
       return;
     }
 
-    // Extrair filtros
-    const filters = {
-      cargo: req.query.cargo as string | undefined,
-      department: req.query.department as string | undefined,
-      status: req.query.status as string | undefined,
-    };
+    const filters = parseEmployeeFilters(req.query);
 
     // Buscar funcionários
     const employees = await getAllEmployees(filters);
@@ -121,9 +129,6 @@ export const getEmployeeByIdController = async (
       res.status(404).json({ error: 'Funcionário não encontrado' });
       return;
     }
-
-    // Buscar logs de auditoria
-    const auditLogs = await getAuditLogs(id);
 
     res.status(200).json(employee);
   } catch (error) {
@@ -218,6 +223,89 @@ export const deleteEmployeeController = async (
     if (error instanceof Error) {
       const statusCode = (error as any).statusCode || 500;
       res.status(statusCode).json({ error: error.message });
+      return;
+    }
+
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+export const reactivateEmployeeController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Autenticação necessária' });
+      return;
+    }
+
+    const { id } = req.params;
+    if (!id?.trim()) {
+      res.status(400).json({ error: 'ID de funcionário inválido' });
+      return;
+    }
+
+    const employee = await reactivateEmployee(id, String(req.userId));
+    res.status(200).json(employee);
+  } catch (error) {
+    if (error instanceof Error) {
+      const statusCode = (error as Error & { statusCode?: number }).statusCode || 500;
+      res.status(statusCode).json({ error: error.message });
+      return;
+    }
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+export const exportEmployeesPdfController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Autenticação necessária' });
+      return;
+    }
+
+    const pdf = await generateEmployeesPdf(parseEmployeeFilters(req.query));
+    const filename = `relatorio-funcionarios-${Date.now()}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(pdf);
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+      return;
+    }
+
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+export const exportEmployeesXlsxController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({ error: 'Autenticação necessária' });
+      return;
+    }
+
+    const xlsx = await generateEmployeesXlsx(parseEmployeeFilters(req.query));
+    const filename = `relatorio-funcionarios-${Date.now()}.xlsx`;
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(xlsx);
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
       return;
     }
 

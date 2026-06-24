@@ -4,9 +4,16 @@ import {
   CreateEmployeeRequest,
   UpdateEmployeeRequest,
   AuditLog,
+  EmployeeFilters,
 } from '@/types';
 
 const prisma = new PrismaClient();
+
+const employeeInclude = {
+  department: { select: { name: true } },
+  position: { select: { name: true } },
+  user: { select: { id: true } },
+} as const;
 
 /**
  * Registrar auditoria de ação
@@ -28,18 +35,104 @@ const createAuditLog = async (
     });
   } catch (error) {
     console.error('Erro ao registrar auditoria:', error);
-    // Não throw para não quebrar a operação principal
   }
 };
 
+type EmployeeWithRelations = {
+  id: number;
+  name: string;
+  cpf: string;
+  rg: string;
+  email: string;
+  phone: string;
+  departmentId: number;
+  positionId: number;
+  birthDate: Date;
+  hireDate: Date;
+  salary: number;
+  address: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  inactivatedAt: Date | null;
+  department?: { name: string };
+  position?: { name: string };
+};
+
 /**
- * Converter Decimal do Prisma para number
+ * Converter registro Prisma para Employee com nomes de relação
  */
-const formatEmployee = (employee: any): Employee => {
+const formatEmployee = (employee: EmployeeWithRelations): Employee => {
   return {
-    ...employee,
+    id: employee.id,
+    name: employee.name,
+    cpf: employee.cpf,
+    rg: employee.rg,
+    email: employee.email,
+    phone: employee.phone,
+    departmentId: employee.departmentId,
+    departmentName: employee.department?.name ?? '',
+    positionId: employee.positionId,
+    positionName: employee.position?.name ?? '',
+    birthDate: employee.birthDate,
+    hireDate: employee.hireDate,
     salary: employee.salary ? Number(employee.salary) : 0,
+    address: employee.address,
+    status: employee.status as Employee['status'],
+    createdAt: employee.createdAt,
+    updatedAt: employee.updatedAt,
+    inactivatedAt: employee.inactivatedAt,
   };
+};
+
+const validateDepartmentAndPosition = async (
+  departmentId: number,
+  positionId: number
+): Promise<void> => {
+  const department = await prisma.department.findUnique({
+    where: { id: departmentId },
+  });
+
+  if (!department) {
+    const error = new Error('Departamento não encontrado');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  if (department.status !== 'Ativo') {
+    const error = new Error('Departamento inativo não pode ser vinculado');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  const position = await prisma.position.findFirst({
+    where: { id: positionId, departmentId },
+  });
+
+  if (!position) {
+    const error = new Error('Cargo não encontrado ou não pertence ao departamento informado');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+
+  if (position.status !== 'Ativo') {
+    const error = new Error('Cargo inativo não pode ser vinculado');
+    (error as Error & { statusCode?: number }).statusCode = 400;
+    throw error;
+  }
+};
+
+const cascadeInactivateLinkedUser = async (employeeId: number): Promise<void> => {
+  const linkedUser = await prisma.user.findUnique({
+    where: { employeeId },
+  });
+
+  if (linkedUser && linkedUser.status === 'Ativo' && !linkedUser.isMasterSeed) {
+    await prisma.user.update({
+      where: { id: linkedUser.id },
+      data: { status: 'Inativo', inactivatedAt: new Date() },
+    });
+  }
 };
 
 /**
@@ -49,29 +142,28 @@ export const createEmployee = async (
   data: CreateEmployeeRequest,
   userId: string
 ): Promise<Employee> => {
-  // Validar CPF duplicado
+  await validateDepartmentAndPosition(data.departmentId, data.positionId);
+
   const existingCPF = await prisma.employee.findUnique({
     where: { cpf: data.cpf },
   });
 
   if (existingCPF) {
     const error = new Error('Dados fornecidos são inválidos');
-    (error as any).statusCode = 409;
+    (error as Error & { statusCode?: number }).statusCode = 409;
     throw error;
   }
 
-  // Validar email duplicado
   const existingEmail = await prisma.employee.findFirst({
     where: { email: data.email },
   });
 
   if (existingEmail) {
     const error = new Error('Dados fornecidos são inválidos');
-    (error as any).statusCode = 409;
+    (error as Error & { statusCode?: number }).statusCode = 409;
     throw error;
   }
 
-  // Criar funcionário
   const employee = await prisma.employee.create({
     data: {
       name: data.name,
@@ -79,17 +171,17 @@ export const createEmployee = async (
       rg: data.rg,
       email: data.email,
       phone: data.phone,
-      cargo: data.cargo,
-      department: data.department,
+      departmentId: data.departmentId,
+      positionId: data.positionId,
       birthDate: new Date(data.birthDate),
       hireDate: new Date(data.hireDate),
       salary: Number(data.salary),
       address: data.address,
-      status: 'Ativo',
+      status: data.status ?? 'Ativo',
     },
+    include: employeeInclude,
   });
 
-  // Registrar auditoria
   await createAuditLog(
     employee.id,
     'CREATE',
@@ -103,56 +195,42 @@ export const createEmployee = async (
 /**
  * Buscar todos os funcionários com filtros opcionais
  */
-export const getAllEmployees = async (filters?: {
-  cargo?: string;
-  department?: string;
-  status?: string;
-}): Promise<Employee[]> => {
-  const where: any = {};
+export const getAllEmployees = async (
+  filters?: EmployeeFilters
+): Promise<Employee[]> => {
+  const where: Record<string, unknown> = {};
 
-  // Filtro de status (padrão: apenas Ativos, mas se vazio retorna todos)
   if (filters?.status === undefined || filters?.status === '') {
-    where.status = 'Ativo'; // Padrão ao abrir a página
-  } else if (filters?.status === 'todos') {
-    // Se enviar 'todos', não filtra por status (retorna todos)
-  } else {
+    where.status = 'Ativo';
+  } else if (filters?.status !== 'todos') {
     where.status = filters.status;
   }
 
-  // Filtros adicionais (sem mode: insensitive pois SQLite não suporta)
-  if (filters?.cargo && filters.cargo.trim() !== '') {
-    where.cargo = {
-      contains: filters.cargo,
-    };
+  if (filters?.position && filters.position.trim() !== '') {
+    where.position = { name: { contains: filters.position.trim() } };
   }
 
   if (filters?.department && filters.department.trim() !== '') {
-    where.department = {
-      contains: filters.department,
-    };
+    where.department = { name: { contains: filters.department.trim() } };
+  }
+
+  if (filters?.hireDateFrom || filters?.hireDateTo) {
+    const hireDate: Record<string, Date> = {};
+    if (filters.hireDateFrom) {
+      hireDate.gte = new Date(filters.hireDateFrom);
+    }
+    if (filters.hireDateTo) {
+      const end = new Date(filters.hireDateTo);
+      end.setHours(23, 59, 59, 999);
+      hireDate.lte = end;
+    }
+    where.hireDate = hireDate;
   }
 
   const employees = await prisma.employee.findMany({
     where,
     orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      name: true,
-      cpf: true,
-      rg: true,
-      email: true,
-      phone: true,
-      cargo: true,
-      department: true,
-      birthDate: true,
-      hireDate: true,
-      salary: true,
-      address: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-      inactivatedAt: true,
-    },
+    include: employeeInclude,
   });
 
   return employees.map(formatEmployee);
@@ -165,6 +243,7 @@ export const getEmployeeById = async (id: string): Promise<Employee | null> => {
   const numericId = parseInt(id, 10);
   const employee = await prisma.employee.findUnique({
     where: { id: numericId },
+    include: employeeInclude,
   });
 
   if (!employee) {
@@ -184,18 +263,23 @@ export const updateEmployee = async (
 ): Promise<Employee> => {
   const numericId = parseInt(id, 10);
 
-  // Validar existência
   const existingEmployee = await prisma.employee.findUnique({
     where: { id: numericId },
   });
 
   if (!existingEmployee) {
     const error = new Error('Funcionário não encontrado');
-    (error as any).statusCode = 404;
+    (error as Error & { statusCode?: number }).statusCode = 404;
     throw error;
   }
 
-  // Se CPF foi alterado, validar duplicidade
+  const nextDepartmentId = data.departmentId ?? existingEmployee.departmentId;
+  const nextPositionId = data.positionId ?? existingEmployee.positionId;
+
+  if (data.departmentId !== undefined || data.positionId !== undefined) {
+    await validateDepartmentAndPosition(nextDepartmentId, nextPositionId);
+  }
+
   if (data.cpf && data.cpf !== existingEmployee.cpf) {
     const cpfExists = await prisma.employee.findUnique({
       where: { cpf: data.cpf },
@@ -203,12 +287,11 @@ export const updateEmployee = async (
 
     if (cpfExists) {
       const error = new Error('CPF já cadastrado no sistema');
-      (error as any).statusCode = 409;
+      (error as Error & { statusCode?: number }).statusCode = 409;
       throw error;
     }
   }
 
-  // Se email foi alterado, validar duplicidade
   if (data.email && data.email !== existingEmployee.email) {
     const emailExists = await prisma.employee.findFirst({
       where: {
@@ -219,14 +302,13 @@ export const updateEmployee = async (
 
     if (emailExists) {
       const error = new Error('E-mail já cadastrado no sistema');
-      (error as any).statusCode = 409;
+      (error as Error & { statusCode?: number }).statusCode = 409;
       throw error;
     }
   }
 
-  // Preparar dados para atualização
-  const updateData: any = {};
-  const changedFields: Record<string, any> = {};
+  const updateData: Record<string, unknown> = {};
+  const changedFields: Record<string, unknown> = {};
 
   Object.entries(data).forEach(([key, value]) => {
     if (value !== undefined) {
@@ -243,13 +325,12 @@ export const updateEmployee = async (
     }
   });
 
-  // Atualizar funcionário
   const updatedEmployee = await prisma.employee.update({
     where: { id: numericId },
     data: updateData,
+    include: employeeInclude,
   });
 
-  // Registrar auditoria
   if (Object.keys(changedFields).length > 0) {
     await createAuditLog(numericId, 'UPDATE', changedFields, userId);
   }
@@ -258,7 +339,8 @@ export const updateEmployee = async (
 };
 
 /**
- * RF05 - Deletar funcionário (exclusão lógica)
+ * RF05 - Deletar funcionário
+ * Exclusão lógica se houver logs além de CREATE ou usuário vinculado; caso contrário, exclusão física
  */
 export const deleteEmployee = async (
   id: string,
@@ -266,62 +348,107 @@ export const deleteEmployee = async (
 ): Promise<Employee> => {
   const numericId = parseInt(id, 10);
 
-  // Validar existência
   const existingEmployee = await prisma.employee.findUnique({
     where: { id: numericId },
+    include: employeeInclude,
   });
 
   if (!existingEmployee) {
     const error = new Error('Funcionário não encontrado');
-    (error as any).statusCode = 404;
+    (error as Error & { statusCode?: number }).statusCode = 404;
     throw error;
   }
 
-  // Se status é "Ativo", desativar
-  if (existingEmployee.status === 'Ativo') {
+  const [nonCreateAuditCount, linkedUser] = await Promise.all([
+    prisma.auditLog.count({
+      where: {
+        employeeId: numericId,
+        action: { not: 'CREATE' },
+      },
+    }),
+    prisma.user.findUnique({
+      where: { employeeId: numericId },
+    }),
+  ]);
+
+  const requiresLogicalDelete = nonCreateAuditCount > 0 || linkedUser !== null;
+
+  if (requiresLogicalDelete) {
+    if (existingEmployee.status === 'Inativo') {
+      return formatEmployee(existingEmployee);
+    }
+
     const deletedEmployee = await prisma.employee.update({
       where: { id: numericId },
       data: {
         status: 'Inativo',
         inactivatedAt: new Date(),
       },
+      include: employeeInclude,
     });
 
-    // Registrar auditoria
     await createAuditLog(
       numericId,
       'DELETE',
       {
         status: 'Inativo',
         inactivatedAt: new Date().toISOString(),
+        reason: linkedUser
+          ? 'Exclusão lógica — funcionário com usuário vinculado (usuário inativado em cascata)'
+          : 'Exclusão lógica — funcionário com histórico de alterações',
       },
       userId
     );
 
+    await cascadeInactivateLinkedUser(numericId);
+
     return formatEmployee(deletedEmployee);
   }
 
-  // Se status é "Inativo", permitir reativação
-  const reactivatedEmployee = await prisma.employee.update({
+  await prisma.auditLog.deleteMany({ where: { employeeId: numericId } });
+  await prisma.employee.delete({ where: { id: numericId } });
+
+  return formatEmployee(existingEmployee);
+};
+
+export const reactivateEmployee = async (
+  id: string,
+  userId: string
+): Promise<Employee> => {
+  const numericId = parseInt(id, 10);
+
+  const existingEmployee = await prisma.employee.findUnique({
+    where: { id: numericId },
+    include: employeeInclude,
+  });
+
+  if (!existingEmployee) {
+    const error = new Error('Funcionário não encontrado');
+    (error as Error & { statusCode?: number }).statusCode = 404;
+    throw error;
+  }
+
+  if (existingEmployee.status === 'Ativo') {
+    return formatEmployee(existingEmployee);
+  }
+
+  const reactivated = await prisma.employee.update({
     where: { id: numericId },
     data: {
       status: 'Ativo',
       inactivatedAt: null,
     },
+    include: employeeInclude,
   });
 
-  // Registrar auditoria
   await createAuditLog(
     numericId,
     'UPDATE',
-    {
-      status: 'Ativo',
-      inactivatedAt: null,
-    },
+    { status: 'Ativo', inactivatedAt: null },
     userId
   );
 
-  return formatEmployee(reactivatedEmployee);
+  return formatEmployee(reactivated);
 };
 
 /**
@@ -335,8 +462,8 @@ export const getAuditLogs = async (employeeId: string): Promise<AuditLog[]> => {
   });
 
   return logs.map((log) => ({
-  ...log,
-  changedFields: JSON.parse(log.changedFields),
-  action: log.action as 'CREATE' | 'UPDATE' | 'DELETE',
-}));
+    ...log,
+    changedFields: JSON.parse(log.changedFields),
+    action: log.action as 'CREATE' | 'UPDATE' | 'DELETE',
+  }));
 };

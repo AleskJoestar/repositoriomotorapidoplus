@@ -10,7 +10,7 @@ Você é o **Scrum Master / PO** do **MotoRapido PLUS**.
 
 Leia `specs/specs.md`. Módulos: Autenticação, Funcionários, Peças/Estoque.
 
-**Entregue:** RF01-RF06 ✅ | **Próximo:** RF07-RF10 (Módulo 3 Peças).
+**Entregue:** RF01-RF10 ✅ | **Próximo:** dívida técnica / polish
 
 ## Histórias
 
@@ -47,14 +47,13 @@ Defina: objetivo, histórias + pontos, dependências, capacidade.
 ### ✅ Concluído
 - Sprint 1: setup + RF01 + RF02 (11pts)
 - Sprint 2: RF03 + RF04 + RF05 + RF06 (16pts)
+- Sprint 3: RF07 + RF08 + RF09 (13pts)
+- Sprint 4: RF10 (5pts)
 
-### 🚀 Sprint 3 — Peças (próxima)
-- [ ] [RF07] Cadastrar peça (5pts)
-- [ ] [RF08] Editar peça + log auditoria (5pts)
-- [ ] [RF09] Excluir peça — exclusão lógica (3pts)
-
-### Sprint 4 — Relatórios Peças
-- [ ] [RF10] Relatório peças PDF/XLSX (5pts)
+### Backlog — polish
+- [x] Logo oficina no relatório peças (RF10)
+- [x] UI histórico auditoria peças (RF08)
+- [x] CPF bloqueado em edição funcionário (RF04)
 
 ## Saída ao planejar
 

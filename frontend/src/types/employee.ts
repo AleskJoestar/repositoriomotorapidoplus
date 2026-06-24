@@ -5,10 +5,14 @@ export interface Employee {
   rg: string;
   email: string;
   phone: string;
-  cargo: string;
-  department: string;
-  birthDate: string; // ISO date YYYY-MM-DD
-  hireDate: string; // ISO date YYYY-MM-DD
+  departmentId: number;
+  positionId: number;
+  departmentName?: string;
+  positionName?: string;
+  department?: { id: number; name: string };
+  position?: { id: number; name: string };
+  birthDate: string;
+  hireDate: string;
   salary: number;
   address: string;
   status: 'Ativo' | 'Inativo';
@@ -22,18 +26,34 @@ export interface CreateEmployeeRequest {
   rg: string;
   email: string;
   phone: string;
-  cargo: string;
-  department: string;
-  birthDate: string; // YYYY-MM-DD
-  hireDate: string; // YYYY-MM-DD
+  departmentId: number;
+  positionId: number;
+  birthDate: string;
+  hireDate: string;
   salary: number;
   address: string;
+  status?: 'Ativo' | 'Inativo';
 }
 
 export interface UpdateEmployeeRequest extends Partial<CreateEmployeeRequest> {}
 
 export interface EmployeeFilters {
-  cargo?: string;
+  position?: string;
   department?: string;
   status?: 'Ativo' | 'Inativo' | 'todos';
+  hireDateFrom?: string;
+  hireDateTo?: string;
+}
+
+export interface Position {
+  id: number;
+  name: string;
+  status: string;
+}
+
+export interface DepartmentOption {
+  id: number;
+  name: string;
+  status: string;
+  positions?: Position[];
 }

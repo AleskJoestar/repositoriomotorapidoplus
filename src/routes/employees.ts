@@ -6,6 +6,9 @@ import {
   getEmployeeByIdController,
   updateEmployeeController,
   deleteEmployeeController,
+  reactivateEmployeeController,
+  exportEmployeesPdfController,
+  exportEmployeesXlsxController,
 } from '@/controllers/employeeController';
 
 const router = Router();
@@ -26,6 +29,18 @@ router.post('/employees', createEmployeeController);
 router.get('/employees', getAllEmployeesController);
 
 /**
+ * GET /api/employees/report/pdf
+ * RF06 - Relatório de funcionários em PDF
+ */
+router.get('/employees/report/pdf', exportEmployeesPdfController);
+
+/**
+ * GET /api/employees/report/xlsx
+ * RF06 - Relatório de funcionários em XLSX
+ */
+router.get('/employees/report/xlsx', exportEmployeesXlsxController);
+
+/**
  * GET /api/employees/:id
  * Buscar funcionário por ID
  */
@@ -42,5 +57,6 @@ router.put('/employees/:id', updateEmployeeController);
  * RF05 - Inativar funcionário (exclusão lógica)
  */
 router.delete('/employees/:id', deleteEmployeeController);
+router.patch('/employees/:id/reactivate', reactivateEmployeeController);
 
 export default router;

@@ -111,6 +111,7 @@ export const EmployeeFormPage: React.FC = () => {
           onSubmit={handleSubmit}
           loading={submitting}
           onCancel={() => navigate('/employees')}
+          onValidationError={(message) => setToast({ message, type: 'error' })}
         />
 
         {/* Toast */}

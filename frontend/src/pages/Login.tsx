@@ -31,11 +31,12 @@ export const Login: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
     try {
-      await login(data.email, data.senha);
+      const user = await login(data.email, data.senha);
       setToast({ message: 'Login bem-sucedido! Redirecionando...', type: 'success' });
       reset();
-      setTimeout(() => navigate('/dashboard'), 2000);
-    } catch (error: any) {
+      const target = user.accessType === 'MASTER' ? '/dashboard' : '/sales';
+      setTimeout(() => navigate(target), 800);
+    } catch {
       setToast({
         message: 'E-mail ou senha incorretos',
         type: 'error',
@@ -62,16 +63,8 @@ export const Login: React.FC = () => {
           error={errors.senha?.message}
           {...register('senha')}
         />
-        <Button type="submit" loading={loading} className="w-full mb-4">
+        <Button type="submit" loading={loading} className="w-full">
           Entrar
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full"
-          onClick={() => navigate('/register')}
-        >
-          Não tem conta? Cadastre-se
         </Button>
       </form>
       {toast && (

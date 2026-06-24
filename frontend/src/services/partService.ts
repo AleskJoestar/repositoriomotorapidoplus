@@ -5,6 +5,7 @@ import {
   UpdatePartRequest,
   PartFilters,
   DeletePartResponse,
+  PartAuditLogEntry,
 } from '@/types/part';
 
 export const partService = {
@@ -33,6 +34,11 @@ export const partService = {
     return response.data;
   },
 
+  reactivatePart: async (id: string): Promise<Part> => {
+    const response = await api.patch(`/parts/${id}/reactivate`);
+    return response.data;
+  },
+
   downloadReportPdf: async (filters?: PartFilters): Promise<Blob> => {
     const response = await api.get('/parts/report/pdf', {
       params: filters,
@@ -46,6 +52,11 @@ export const partService = {
       params: filters,
       responseType: 'blob',
     });
+    return response.data;
+  },
+
+  getAuditLogs: async (id: string): Promise<PartAuditLogEntry[]> => {
+    const response = await api.get(`/parts/${id}/audit-logs`);
     return response.data;
   },
 };

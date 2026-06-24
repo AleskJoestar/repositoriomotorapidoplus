@@ -47,7 +47,29 @@ export const employeeService = {
   /**
    * Deleta um funcionário
    */
-  deleteEmployee: async (id: string): Promise<void> => {
-    await api.delete(`/employees/${id}`);
+  deleteEmployee: async (id: string): Promise<Employee> => {
+    const response = await api.delete(`/employees/${id}`);
+    return response.data;
+  },
+
+  reactivateEmployee: async (id: string): Promise<Employee> => {
+    const response = await api.patch(`/employees/${id}/reactivate`);
+    return response.data;
+  },
+
+  downloadReportPdf: async (filters?: EmployeeFilters): Promise<Blob> => {
+    const response = await api.get('/employees/report/pdf', {
+      params: filters,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  downloadReportXlsx: async (filters?: EmployeeFilters): Promise<Blob> => {
+    const response = await api.get('/employees/report/xlsx', {
+      params: filters,
+      responseType: 'blob',
+    });
+    return response.data;
   },
 };

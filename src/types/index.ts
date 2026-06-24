@@ -5,13 +5,6 @@ export interface AuthPayload {
   exp?: number;
 }
 
-export interface RegisterRequest {
-  nome: string;
-  email: string;
-  senha: string;
-  confirmarSenha: string;
-}
-
 export interface LoginRequest {
   email: string;
   senha: string;
@@ -28,6 +21,7 @@ export interface TokenResponse {
     id: number;
     nome: string;
     email: string;
+    accessType: string;
   };
 }
 
@@ -40,8 +34,10 @@ export interface Employee {
   rg: string;
   email: string;
   phone: string;
-  cargo: string;
-  department: string;
+  departmentId: number;
+  departmentName: string;
+  positionId: number;
+  positionName: string;
   birthDate: Date;
   hireDate: Date;
   salary: number;
@@ -58,12 +54,13 @@ export interface CreateEmployeeRequest {
   rg: string;
   email: string;
   phone: string;
-  cargo: string;
-  department: string;
+  departmentId: number;
+  positionId: number;
   birthDate: string | Date;
   hireDate: string | Date;
   salary: number;
   address: string;
+  status?: "Ativo" | "Inativo";
 }
 
 export interface UpdateEmployeeRequest {
@@ -72,12 +69,13 @@ export interface UpdateEmployeeRequest {
   rg?: string;
   email?: string;
   phone?: string;
-  cargo?: string;
-  department?: string;
+  departmentId?: number;
+  positionId?: number;
   birthDate?: string | Date;
   hireDate?: string | Date;
   salary?: number;
   address?: string;
+  status?: "Ativo" | "Inativo";
 }
 
 export interface AuditLog {
@@ -89,19 +87,30 @@ export interface AuditLog {
   createdAt: Date;
 }
 
+export interface EmployeeFilters {
+  position?: string;
+  department?: string;
+  status?: string;
+  hireDateFrom?: string;
+  hireDateTo?: string;
+}
+
 // ============ PART TYPES ============
 
 export interface Part {
   id: number;
   code: string;
   name: string;
-  category: string;
+  categoryId: number;
+  categoryName: string;
+  manufacturerId: number;
+  manufacturerName: string;
   quantity: number;
   description?: string | null;
-  manufacturer?: string | null;
   serialNumber?: string | null;
   location?: string | null;
-  minQuantity?: number | null;
+  minQuantity: number;
+  price: number;
   status: "Ativo" | "Inativo";
   createdAt: Date;
   updatedAt: Date;
@@ -110,24 +119,26 @@ export interface Part {
 
 export interface CreatePartRequest {
   name: string;
-  category: string;
+  categoryId: number;
+  manufacturerId: number;
   quantity: number;
   description?: string;
-  manufacturer?: string;
   serialNumber?: string;
   location?: string;
-  minQuantity?: number;
+  minQuantity: number;
+  price: number;
 }
 
 export interface UpdatePartRequest {
   name?: string;
-  category?: string;
+  categoryId?: number;
+  manufacturerId?: number;
   quantity?: number;
   description?: string;
-  manufacturer?: string;
   serialNumber?: string;
   location?: string;
   minQuantity?: number;
+  price?: number;
 }
 
 export interface PartFilters {
@@ -143,5 +154,6 @@ export interface PartAuditLog {
   action: "CREATE" | "UPDATE" | "DELETE";
   changedFields: Record<string, unknown>;
   userId: string;
+  userName?: string;
   createdAt: Date;
 }

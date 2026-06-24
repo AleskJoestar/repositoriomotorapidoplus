@@ -6,9 +6,12 @@ Sistema web de peças para oficinas de motocicletas. Spec completa: `specs/specs
 
 | Módulo | RFs | Status |
 |--------|-----|--------|
-| Autenticação | RF01-RF02 | ✅ |
-| Funcionários | RF03-RF06 | ✅ |
-| Peças/Estoque | RF07-RF10 | ✅ implementado |
+| Autenticação (Login) | RF01 | ✅ |
+| Funcionários | RF02-RF05 | ✅ |
+| Peças/Estoque | RF06-RF09 | ✅ |
+| Departamentos/Cargos | RF10 | ✅ |
+| Cadastros Auxiliares | RF11-RF12 | ✅ |
+| Usuários e Acessos | RF13-RF14 | ✅ |
 
 ## Workflow
 
@@ -30,24 +33,29 @@ Use `/orquestrador` como ponto de entrada para novas demandas.
 
 - Senhas: `bcrypt` — nunca texto puro
 - Login: erro genérico (anti-enumeração)
-- Exclusão com histórico → lógica, nunca física
+- **Sem auto-cadastro público** — usuários via Master (RF14)
+- Exclusão com histórico → lógica; sem histórico → física (funcionários)
+- Peças/fabricantes/categorias/deptos/usuários → apenas inativar
+- Estoque mínimo peça: **≥ 1**
 - Validação frontend **e** backend
 - Auditoria obrigatória em edição de peças
-- Relatórios: PDF + XLSX
+- Relatórios: PDF + XLSX (funcionários/peças) | PDF + XML (auxiliares/usuários)
 - Secrets em `.env` — nunca hardcode
+- Master semente: `master@motorplus.com` — imortal (RF13)
 
 ## Stack
 
 **Backend:** Express + TypeScript + Prisma + SQLite + Zod + JWT  
 **Frontend:** React 18 + Vite + Tailwind + React Hook Form + Zod + Axios
 
-## Retomada — Módulo 3 (Peças)
+## Setup local
 
-Ordem sugerida:
+```bash
+npx prisma db push    # ou migrate dev
+npx prisma generate
+npm run prisma:seed   # RF13 master
+npm run dev           # backend
+cd frontend && npm run dev
+```
 
-1. Prisma: models `Part`, `PartAuditLog`, `StockMovement` (se RF09 exigir histórico)
-2. Backend: CRUD RF07-RF09 + auditoria RF08 + relatório RF10
-3. Frontend: telas listagem/formulário peças + filtros relatório
-4. Testes manuais: cadastro → edição (log) → exclusão com/sem histórico → export PDF/XLSX
-
-Invocar: `/orquestrador retomar Módulo 3 conforme specs/specs.md`
+Login master: `master@motorplus.com` / `usermaster#@`

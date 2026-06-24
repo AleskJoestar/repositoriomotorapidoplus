@@ -2,34 +2,40 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useParts } from '@/hooks/useParts';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Toast } from '@/components/Toast';
 import { Button } from '@/components/Button';
-import { Part, PartFilters } from '@/types/part';
+import { Part, PartFilters, LOW_STOCK_THRESHOLD, formatPartPrice } from '@/types/part';
+
+const DEFAULT_PART_FILTERS: PartFilters = { status: 'todos' };
 
 export const Parts: React.FC = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const { canInactivate, canAccessReports, canManageParts } = usePermissions();
   const {
     parts,
     loading,
     error,
     fetchParts,
     deletePart,
+    reactivatePart,
     downloadReportPdf,
     downloadReportXlsx,
   } = useParts();
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-  const [filters, setFilters] = useState<PartFilters>({});
+  const [filters, setFilters] = useState<PartFilters>(DEFAULT_PART_FILTERS);
   const [deleteModal, setDeleteModal] = useState<{ part: Part; open: boolean }>({
     part: null as any,
     open: false,
   });
   const [deleting, setDeleting] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    fetchParts(filters);
+    fetchParts(DEFAULT_PART_FILTERS);
   }, []);
 
   useEffect(() => {
@@ -48,11 +54,11 @@ export const Parts: React.FC = () => {
     fetchParts(newFilters);
   };
 
-  const handleDeleteClick = (part: Part) => {
+  const handleInactivateClick = (part: Part) => {
     setDeleteModal({ part, open: true });
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmInactivate = async () => {
     if (!deleteModal.part) return;
     setDeleting(true);
     try {
@@ -62,11 +68,24 @@ export const Parts: React.FC = () => {
       fetchParts(filters);
     } catch (err: any) {
       setToast({
-        message: err.response?.data?.error || 'Erro ao excluir peça',
+        message: err.response?.data?.error || 'Erro ao inativar peça',
         type: 'error',
       });
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleReactivate = async (part: Part) => {
+    setReactivating(true);
+    try {
+      await reactivatePart(String(part.id));
+      setToast({ message: 'Peça reativada com sucesso', type: 'success' });
+      fetchParts(filters);
+    } catch {
+      setToast({ message: 'Erro ao reativar peça', type: 'error' });
+    } finally {
+      setReactivating(false);
     }
   };
 
@@ -86,10 +105,13 @@ export const Parts: React.FC = () => {
     }
   };
 
-  const isLowStock = (part: Part) =>
-    part.minQuantity !== null &&
-    part.minQuantity !== undefined &&
-    part.quantity < part.minQuantity;
+  const isLowStock = (part: Part) => part.quantity <= LOW_STOCK_THRESHOLD;
+
+  const getCategoryLabel = (part: Part) =>
+    part.categoryName || part.category?.name || '-';
+
+  const getManufacturerLabel = (part: Part) =>
+    part.manufacturerName || part.manufacturer?.name || '-';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -97,9 +119,14 @@ export const Parts: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">MotoRapido PLUS</h1>
           <div className="flex gap-4">
-            <Button variant="secondary" onClick={() => navigate('/dashboard')}>
-              ← Voltar ao Início
+            <Button variant="secondary" onClick={() => navigate('/sales')}>
+              Caixa
             </Button>
+            {user?.accessType === 'MASTER' && (
+              <Button variant="secondary" onClick={() => navigate('/dashboard')}>
+                ← Voltar ao Início
+              </Button>
+            )}
             <Button variant="secondary" onClick={handleLogout}>
               Sair
             </Button>
@@ -111,22 +138,28 @@ export const Parts: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Peças / Estoque</h1>
-              <p className="text-gray-600 mt-1">Gerencie o inventário de peças</p>
+              <h1 className="text-3xl font-bold text-gray-900">Produtos / Estoque</h1>
+              <p className="text-gray-600 mt-1">Gerencie o inventário de produtos</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" loading={exporting} onClick={() => handleExport('pdf')}>
-                Exportar PDF
-              </Button>
-              <Button variant="secondary" loading={exporting} onClick={() => handleExport('xlsx')}>
-                Exportar XLSX
-              </Button>
-              <button
-                onClick={() => navigate('/parts/new')}
-                className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-              >
-                + Nova Peça
-              </button>
+              {canAccessReports && (
+                <>
+                  <Button variant="secondary" loading={exporting} onClick={() => handleExport('pdf')}>
+                    Exportar PDF
+                  </Button>
+                  <Button variant="secondary" loading={exporting} onClick={() => handleExport('xlsx')}>
+                    Exportar XLSX
+                  </Button>
+                </>
+              )}
+              {canManageParts && (
+                <button
+                  onClick={() => navigate('/parts/new')}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  + Novo Produto
+                </button>
+              )}
             </div>
           </div>
 
@@ -176,7 +209,7 @@ export const Parts: React.FC = () => {
                     })
                   }
                 />
-                Alerta estoque baixo
+                Alerta estoque baixo (≤ {LOW_STOCK_THRESHOLD})
               </label>
             </div>
           </div>
@@ -202,9 +235,12 @@ export const Parts: React.FC = () => {
                       <th className="px-6 py-3 text-left">Categoria</th>
                       <th className="px-6 py-3 text-left">Fabricante</th>
                       <th className="px-6 py-3 text-left">Qtd</th>
+                      <th className="px-6 py-3 text-left">Preço</th>
                       <th className="px-6 py-3 text-left">Localização</th>
                       <th className="px-6 py-3 text-left">Status</th>
-                      <th className="px-6 py-3 text-center">Ações</th>
+                      {canManageParts && (
+                        <th className="px-6 py-3 text-center">Ações</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -219,9 +255,10 @@ export const Parts: React.FC = () => {
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-3">{part.category}</td>
-                        <td className="px-6 py-3">{part.manufacturer || '-'}</td>
+                        <td className="px-6 py-3">{getCategoryLabel(part)}</td>
+                        <td className="px-6 py-3">{getManufacturerLabel(part)}</td>
                         <td className="px-6 py-3">{part.quantity}</td>
+                        <td className="px-6 py-3">{formatPartPrice(part.price)}</td>
                         <td className="px-6 py-3">{part.location || '-'}</td>
                         <td className="px-6 py-3">
                           <span
@@ -235,22 +272,37 @@ export const Parts: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-6 py-3 text-center">
-                          <div className="flex justify-center gap-2">
-                            <button
-                              onClick={() => navigate(`/parts/${part.id}/edit`)}
-                              className="w-8 h-8 rounded-lg hover:bg-blue-100"
-                              title="Editar"
-                            >
-                              ✏️
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(part)}
-                              className="w-8 h-8 rounded-lg hover:bg-red-100"
-                              title="Excluir"
-                            >
-                              🗑️
-                            </button>
-                          </div>
+                          {canManageParts && (
+                            <div className="flex justify-center gap-2">
+                              <button
+                                onClick={() => navigate(`/parts/${part.id}/edit`)}
+                                className="w-8 h-8 rounded-lg hover:bg-blue-100"
+                                title="Editar"
+                              >
+                                ✏️
+                              </button>
+                              {canInactivate &&
+                                (part.status === 'Ativo' ? (
+                                  <button
+                                    onClick={() => handleInactivateClick(part)}
+                                    className="w-8 h-8 rounded-lg hover:bg-red-100"
+                                    title="Inativar"
+                                  >
+                                    🗑️
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleReactivate(part)}
+                                    disabled={reactivating}
+                                    className="w-8 h-8 rounded-lg hover:bg-green-100"
+                                    title="Reativar"
+                                  >
+                                    ♻️
+                                  </button>
+                                ))}
+                            </div>
+                          )}
+                          {!canManageParts && <span className="text-gray-400">—</span>}
                         </td>
                       </tr>
                     ))}
@@ -270,9 +322,9 @@ export const Parts: React.FC = () => {
               className="bg-white rounded-lg shadow-lg p-6 w-96 max-w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Confirmar Exclusão</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Inativar Peça</h2>
               <p className="text-gray-600 mb-6">
-                Deseja realmente excluir a peça <strong>{deleteModal.part.name}</strong>?
+                Deseja inativar a peça <strong>{deleteModal.part.name}</strong>?
               </p>
               <div className="flex gap-3 justify-end">
                 <Button
@@ -282,8 +334,8 @@ export const Parts: React.FC = () => {
                 >
                   Cancelar
                 </Button>
-                <Button variant="danger" onClick={handleConfirmDelete} loading={deleting}>
-                  Confirmar
+                <Button variant="danger" onClick={handleConfirmInactivate} loading={deleting}>
+                  Inativar Peça
                 </Button>
               </div>
             </div>

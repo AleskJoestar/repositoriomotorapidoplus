@@ -16,6 +16,7 @@ export interface UsePartsReturn {
   createPart: (data: CreatePartRequest) => Promise<void>;
   updatePart: (id: string, data: UpdatePartRequest) => Promise<void>;
   deletePart: (id: string) => Promise<DeletePartResponse>;
+  reactivatePart: (id: string) => Promise<void>;
   fetchParts: (filters?: PartFilters) => Promise<void>;
   fetchPartById: (id: string) => Promise<Part | null>;
   downloadReportPdf: (filters?: PartFilters) => Promise<void>;
@@ -91,7 +92,23 @@ export function useParts(): UsePartsReturn {
       return result;
     } catch (err: any) {
       const message =
-        err.response?.data?.error || 'Erro ao excluir peça. Tente novamente.';
+        err.response?.data?.error || 'Erro ao inativar peça. Tente novamente.';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const reactivatePart = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const updated = await partService.reactivatePart(id);
+      setParts((prev) => prev.map((part) => (part.id === Number(id) ? updated : part)));
+    } catch (err: any) {
+      const message =
+        err.response?.data?.error || 'Erro ao reativar peça. Tente novamente.';
       setError(message);
       throw err;
     } finally {
@@ -161,6 +178,7 @@ export function useParts(): UsePartsReturn {
     createPart,
     updatePart,
     deletePart,
+    reactivatePart,
     fetchParts,
     fetchPartById,
     downloadReportPdf,

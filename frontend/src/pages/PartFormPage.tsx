@@ -2,20 +2,24 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useParts } from '@/hooks/useParts';
 import { PartForm } from '@/components/PartForm';
+import { PartAuditLog } from '@/components/PartAuditLog';
 import { Toast } from '@/components/Toast';
-import { CreatePartRequest, UpdatePartRequest, Part } from '@/types/part';
+import { CreatePartRequest, UpdatePartRequest, Part, PartAuditLogEntry } from '@/types/part';
+import { partService } from '@/services/partService';
 
 export const PartFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const { fetchPartById, createPart, updatePart } = useParts();
   const [part, setPart] = useState<Part | null>(null);
+  const [auditLogs, setAuditLogs] = useState<PartAuditLogEntry[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
   const [loading, setLoading] = useState(!!id);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   const isEditing = !!id;
-  const pageTitle = isEditing ? 'Editar Peça' : 'Nova Peça';
+  const pageTitle = isEditing ? 'Editar Produto' : 'Novo Produto';
 
   useEffect(() => {
     if (isEditing) {
@@ -25,6 +29,15 @@ export const PartFormPage: React.FC = () => {
           const data = await fetchPartById(id!);
           if (data) {
             setPart(data);
+            setAuditLoading(true);
+            try {
+              const logs = await partService.getAuditLogs(id!);
+              setAuditLogs(logs);
+            } catch {
+              setAuditLogs([]);
+            } finally {
+              setAuditLoading(false);
+            }
           } else {
             setToast({ message: 'Peça não encontrada', type: 'error' });
             setTimeout(() => navigate('/parts'), 2000);
@@ -80,7 +93,7 @@ export const PartFormPage: React.FC = () => {
             onClick={() => navigate('/parts')}
             className="text-green-600 hover:text-green-800 font-medium mb-4"
           >
-            ← Voltar para Peças
+            ← Voltar para Produtos
           </button>
           <h1 className="text-3xl font-bold text-gray-900">{pageTitle}</h1>
         </div>
@@ -90,7 +103,12 @@ export const PartFormPage: React.FC = () => {
           onSubmit={handleSubmit}
           loading={submitting}
           onCancel={() => navigate('/parts')}
+          onValidationError={(message) => setToast({ message, type: 'error' })}
         />
+
+        {isEditing && (
+          <PartAuditLog logs={auditLogs} loading={auditLoading} />
+        )}
 
         {toast && (
           <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />

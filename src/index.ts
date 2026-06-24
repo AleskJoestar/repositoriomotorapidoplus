@@ -5,6 +5,11 @@ import helmet from 'helmet';
 import authRoutes from '@/routes/auth';
 import employeeRoutes from '@/routes/employees';
 import partRoutes from '@/routes/parts';
+import departmentRoutes from '@/routes/departments';
+import manufacturerRoutes from '@/routes/manufacturers';
+import categoryRoutes from '@/routes/categories';
+import userRoutes from '@/routes/users';
+import saleRoutes from '@/routes/sales';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +33,11 @@ app.use('/api', employeeRoutes);
 
 // Rotas de peças
 app.use('/api', partRoutes);
+app.use('/api', departmentRoutes);
+app.use('/api', manufacturerRoutes);
+app.use('/api', categoryRoutes);
+app.use('/api', saleRoutes);
+app.use('/api', userRoutes);
 
 // Tratamento de rota não encontrada
 app.use((req: Request, res: Response) => {

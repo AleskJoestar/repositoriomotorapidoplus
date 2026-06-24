@@ -2,16 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useEmployees } from '@/hooks/useEmployees';
+import { usePermissions } from '@/hooks/usePermissions';
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 import { Toast } from '@/components/Toast';
 import { Button } from '@/components/Button';
 import { Employee, EmployeeFilters } from '@/types/employee';
 
+const DEFAULT_FILTERS: EmployeeFilters = { status: 'Ativo' };
+
 export const Employees: React.FC = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const { employees, loading, error, fetchEmployees, deleteEmployee } = useEmployees();
+  const { canInactivate } = usePermissions();
+  const { employees, loading, error, fetchEmployees, deleteEmployee, reactivateEmployee, downloadReportPdf, downloadReportXlsx } = useEmployees();
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -22,13 +27,13 @@ export const Employees: React.FC = () => {
     open: false,
   });
   const [deleting, setDeleting] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
 
   // Filtros
-  const [filters, setFilters] = useState<EmployeeFilters>({});
+  const [filters, setFilters] = useState<EmployeeFilters>(DEFAULT_FILTERS);
 
-  // Carregar funcionários ao montar
   useEffect(() => {
-    fetchEmployees(filters);
+    fetchEmployees(DEFAULT_FILTERS);
   }, []);
 
   // Lidar com erro
@@ -49,12 +54,11 @@ export const Employees: React.FC = () => {
     setDeleteModal({ employee, open: true });
   };
 
-  // Confirmar deleção
   const handleConfirmDelete = async () => {
     if (!deleteModal.employee) return;
     setDeleting(true);
     try {
-      await deleteEmployee(deleteModal.employee.id);
+      await deleteEmployee(String(deleteModal.employee.id));
       setToast({
         message: `Funcionário ${deleteModal.employee.name} inativado com sucesso`,
         type: 'success',
@@ -70,7 +74,37 @@ export const Employees: React.FC = () => {
     }
   };
 
-  // Formatar data
+  const handleReactivate = async (employee: Employee) => {
+    setReactivating(true);
+    try {
+      await reactivateEmployee(String(employee.id));
+      setToast({ message: `Funcionário ${employee.name} reativado`, type: 'success' });
+    } catch (err: any) {
+      setToast({
+        message: err.response?.data?.error || 'Erro ao reativar funcionário',
+        type: 'error',
+      });
+    } finally {
+      setReactivating(false);
+    }
+  };
+
+  const handleExport = async (format: 'pdf' | 'xlsx') => {
+    setExporting(true);
+    try {
+      if (format === 'pdf') {
+        await downloadReportPdf(filters);
+      } else {
+        await downloadReportXlsx(filters);
+      }
+      setToast({ message: 'Relatório exportado com sucesso', type: 'success' });
+    } catch {
+      setToast({ message: 'Erro ao exportar relatório', type: 'error' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('pt-BR');
   };
@@ -79,6 +113,12 @@ export const Employees: React.FC = () => {
   const formatCPF = (cpf: string) => {
     return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   };
+
+  const getPositionLabel = (employee: Employee) =>
+    employee.positionName || employee.position?.name || '-';
+
+  const getDepartmentLabel = (employee: Employee) =>
+    employee.departmentName || employee.department?.name || '-';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -103,24 +143,32 @@ export const Employees: React.FC = () => {
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
           {/* Cabeçalho */}
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Funcionários</h1>
               <p className="text-gray-600 mt-1">Gerencie os funcionários da oficina</p>
             </div>
-            <button
-              onClick={() => navigate('/employees/new')}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-            >
-              + Novo Funcionário
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" loading={exporting} onClick={() => handleExport('pdf')}>
+                Exportar PDF
+              </Button>
+              <Button variant="secondary" loading={exporting} onClick={() => handleExport('xlsx')}>
+                Exportar XLSX
+              </Button>
+              <button
+                onClick={() => navigate('/employees/new')}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                + Novo Funcionário
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Filtros */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <h3 className="text-sm font-medium text-gray-900 mb-4">Filtros</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Cargo
@@ -129,11 +177,11 @@ export const Employees: React.FC = () => {
                 type="text"
                 placeholder="Filtrar por cargo..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={filters.cargo || ''}
+                value={filters.position || ''}
                 onChange={(e) =>
                   handleFilterChange({
                     ...filters,
-                    cargo: e.target.value || undefined,
+                    position: e.target.value || undefined,
                   })
                 }
               />
@@ -161,7 +209,7 @@ export const Employees: React.FC = () => {
               </label>
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={filters.status || 'todos'}
+                value={filters.status || 'Ativo'}
                 onChange={(e) =>
                   handleFilterChange({
                     ...filters,
@@ -173,6 +221,38 @@ export const Employees: React.FC = () => {
                 <option value="Ativo">Ativo</option>
                 <option value="Inativo">Inativo</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Admissão de
+              </label>
+              <input
+                type="date"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={filters.hireDateFrom || ''}
+                onChange={(e) =>
+                  handleFilterChange({
+                    ...filters,
+                    hireDateFrom: e.target.value || undefined,
+                  })
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Admissão até
+              </label>
+              <input
+                type="date"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={filters.hireDateTo || ''}
+                onChange={(e) =>
+                  handleFilterChange({
+                    ...filters,
+                    hireDateTo: e.target.value || undefined,
+                  })
+                }
+              />
             </div>
           </div>
         </div>
@@ -213,8 +293,8 @@ export const Employees: React.FC = () => {
                       <td className="px-6 py-3 text-gray-900">{employee.id}</td>
                       <td className="px-6 py-3 text-gray-900 font-medium">{employee.name}</td>
                       <td className="px-6 py-3 text-gray-600">{formatCPF(employee.cpf.replace(/\D/g, ''))}</td>
-                      <td className="px-6 py-3 text-gray-600">{employee.cargo}</td>
-                      <td className="px-6 py-3 text-gray-600">{employee.department}</td>
+                      <td className="px-6 py-3 text-gray-600">{getPositionLabel(employee)}</td>
+                      <td className="px-6 py-3 text-gray-600">{getDepartmentLabel(employee)}</td>
                       <td className="px-6 py-3 text-gray-600">{formatDate(employee.hireDate)}</td>
                       <td className="px-6 py-3">
                         <span
@@ -236,13 +316,25 @@ export const Employees: React.FC = () => {
                           >
                             ✏️
                           </button>
-                          <button
-                            onClick={() => handleDeleteClick(employee)}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-red-100 text-red-600 transition-colors"
-                            title="Inativar"
-                          >
-                            🗑️
-                          </button>
+                          {canInactivate &&
+                            (employee.status === 'Ativo' ? (
+                              <button
+                                onClick={() => handleDeleteClick(employee)}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-red-100 text-red-600 transition-colors"
+                                title="Inativar"
+                              >
+                                🗑️
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleReactivate(employee)}
+                                disabled={reactivating}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-green-100 text-green-600 transition-colors"
+                                title="Reativar"
+                              >
+                                ♻️
+                              </button>
+                            ))}
                         </div>
                       </td>
                     </tr>
