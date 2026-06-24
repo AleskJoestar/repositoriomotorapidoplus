@@ -1,156 +1,169 @@
-# 🏍️ MotoRapido PLUS
+# MotoRapido PLUS
 
-## Descrição do Projeto
+Sistema web de gestão operacional para oficinas de motocicletas de pequeno e médio porte. Centraliza estoque de peças, cadastro de funcionários, controle de acessos, vendas no balcão (PDV) e relatórios gerenciais em uma única aplicação.
 
-Sistema web moderno e eficiente de **controle e gerenciamento de peças** para oficinas de motocicletas de pequeno e médio porte. Desenvolvido com as melhores práticas de segurança, performance e user experience, o MotoRapido PLUS oferece uma solução completa para organizar o inventário, autenticar usuários e gerenciar operações diárias de uma oficina.
-
-## 🎯 Objetivo da Aplicação
-
-O MotoRapido PLUS foi desenvolvido com o objetivo de:
-
-- ✅ **Simplificar o gerenciamento**: Centralizar todas as informações de peças, funcionários e clientes em um único sistema
-- ✅ **Aumentar a eficiência**: Reduzir tempo operacional e minimizar erros manuais
-- ✅ **Garantir segurança**: Implementar autenticação robusta e controle de acesso
-- ✅ **Melhorar a organização**: Proporcionar relatórios e ferramentas de análise de dados
-- ✅ **Escalar o negócio**: Fornecer uma base sólida para expansão futura
-
-**Status:** ✅ Módulo 1 (Autenticação) — Pronto para Produção  
-**Qualidade:** ⭐⭐⭐⭐⭐ (5/5)  
-**Última Atualização:** 17 de junho de 2026
-
-## 👥 Equipe
-
-| Integrante |
-|-----------|
-| **Alessandro Diniz Loss** |
+**Missão:** organizar inventário, registrar movimentações, apoiar vendas no caixa e fornecer dados confiáveis para reposição de peças e gestão de equipe — com segurança, auditoria e controle de permissões por perfil de usuário.
 
 ---
 
-## 📋 Sumário
-
-- [Características](#características)
-- [Tech Stack](#tech-stack)
-- [Pré-requisitos](#pré-requisitos)
-- [Instalação](#instalação)
-- [Como Rodar](#como-rodar)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Documentação](#documentação)
-- [Próximos Módulos](#próximos-módulos)
-- [Suporte](#suporte)
-
----
-
-## 🎯 Características
-
-### Módulo 1: Autenticação (Implementado ✅)
-
-- ✅ **Cadastro de Usuário** (RF01)
-  - Validação em tempo real
-  - Email e senha seguros
-  - Verificação de duplicidade
-
-- ✅ **Login** (RF02)
-  - Autenticação com JWT (2h de expiração)
-  - Refresh token (7 dias)
-  - Mensagens genéricas de erro (anti-enumeração)
-
-- ✅ **Segurança**
-  - Criptografia bcryptjs (10 rounds)
-  - JWT com Bearer token
-  - CORS e Helmet configurados
-  - Variáveis de ambiente protegidas
-
-### Módulo 2: Gerenciamento de Funcionários (Implementado ✅)
-
-- ✅ **Cadastrar Funcionário** (RF03)
-  - Formulário com 3 seções (Dados Pessoais, Profissionais, Contato)
-  - Validação de CPF (formato e duplicidade)
-  - Validação de email, telefone, datas
-  - Status padrão: Ativo
-
-- ✅ **Editar Funcionário** (RF04)
-  - Atualização de dados (CPF desabilitado)
-  - Validação de duplicidade de email/CPF
-  - Log de auditoria com usuário e timestamp
-  - Partial update suportado
-
-- ✅ **Excluir Funcionário** (RF05)
-  - Exclusão lógica (Status = Inativo)
-  - Histórico preservado
-  - Modal de confirmação
-  - Dados não reutilizáveis enquanto inativo
-
-- ✅ **Relatório de Funcionários** (RF06)
-  - Filtros: Cargo, Departamento, Status, Período
-  - Exportação em PDF e XLSX
-  - Layout profissional com cabeçalho e rodapé
-  - Sumário estatístico
-
-### Próximos Módulos
-
-- 🚀 Módulo 3: Gerenciamento de Peças/Estoque (RF07-RF10)
-
----
-
-## 🛠️ Tech Stack
+## Tecnologias
 
 ### Backend
-- **Runtime:** Node.js 18+
-- **Framework:** Express.js
-- **Linguagem:** TypeScript (Strict Mode)
-- **Database:** SQLite (dev) / PostgreSQL (prod)
-- **ORM:** Prisma
-- **Validação:** Zod
-- **Autenticação:** JWT + Bcryptjs
-- **Segurança:** Helmet, CORS
+
+| Camada | Tecnologia |
+|--------|------------|
+| Runtime | Node.js 18+ |
+| Framework | Express 4 |
+| Linguagem | TypeScript |
+| ORM | Prisma 5 |
+| Banco de dados | SQLite |
+| Validação | Zod |
+| Autenticação | JWT + bcryptjs |
+| Relatórios | PDFKit, ExcelJS |
+| Segurança | Helmet, CORS |
 
 ### Frontend
-- **Framework:** React 18
-- **Build Tool:** Vite
-- **Linguagem:** TypeScript (Strict Mode)
-- **Formulários:** React Hook Form
-- **Validação:** Zod
-- **Estilo:** Tailwind CSS
-- **Cliente HTTP:** Axios
-- **Roteamento:** React Router v6
 
-### DevOps
-- **Versionamento:** Git
-- **Repositório:** GitHub
-- **Agents:** GitHub Copilot (customizados)
+| Camada | Tecnologia |
+|--------|------------|
+| Framework | React 18 |
+| Build | Vite 5 |
+| Linguagem | TypeScript |
+| Estilo | Tailwind CSS |
+| Formulários | React Hook Form + Zod |
+| HTTP | Axios |
+| Roteamento | React Router v6 |
 
 ---
 
-## 📦 Pré-requisitos
+## Funcionalidades
 
-- Node.js 18+
-- npm ou yarn
-- Git
+Estado atual do sistema após auditoria funcional (backend + frontend).
 
-**Versões Testadas:**
-```
-Node.js: 18.x LTS
-npm: 9.x+
-```
+### Autenticação e sessão
+
+- Login com e-mail e senha (`POST /api/auth/login`)
+- JWT de acesso (padrão: 2h) e refresh token (padrão: 7d)
+- Mensagem genérica de erro em falha de login (anti-enumeração)
+- Senhas armazenadas com bcrypt (10 rounds)
+- **Sem auto-cadastro público** — rota `/register` redireciona para `/login`
+- Usuários criados exclusivamente pelo perfil Master (RF14)
+
+### Funcionários
+
+- CRUD completo com validação de CPF, idade mínima (18 anos) e duplicidade
+- Vínculo com departamento e cargo ativos
+- Exclusão inteligente: lógica se houver histórico de auditoria ou usuário vinculado; física caso contrário
+- Reativação de funcionários inativos
+- Relatório com filtros (cargo, departamento, status, período de admissão) — **PDF e XLSX**
+- Log de auditoria em create/update/delete (backend)
+
+### Peças e estoque
+
+- Cadastro com código automático (`P-000001`, …), categoria, fabricante, quantidade e estoque mínimo (≥ 1)
+- Edição com trilha de auditoria (`PartAuditLog`) — data, hora e usuário
+- Exclusão por inativação (soft delete)
+- Movimentações de estoque registradas (entrada, saída, venda, estorno)
+- Filtros: categoria, fabricante, status, alerta de estoque baixo
+- Relatório — **PDF e XLSX** (somente Master)
+- Usuários COMUM visualizam estoque; CRUD restrito ao Master
+
+### Departamentos e cargos
+
+- CRUD de departamentos com cargos (posições) aninhados
+- Inativação em cascata (departamento + cargos)
+- Reativação de departamentos e cargos
+
+### Cadastros auxiliares
+
+- **Fabricantes:** CRUD, inativação/reativação, relatório **PDF e XML**
+- **Categorias:** CRUD, inativação/reativação, relatório **PDF e XML**
+
+### Usuários e acessos
+
+- Gestão exclusiva do Master: criar, listar, inativar e reativar usuários
+- Tipos de acesso: `MASTER` (administrador) e `COMUM` (operador de caixa)
+- Vínculo opcional 1:1 com funcionário ativo
+- Usuário Master semente imortal (`isMasterSeed`) — não pode ser inativado
+- Relatório — **PDF e XML**
+
+### Vendas / PDV (Caixa)
+
+- Carrinho de venda aberto por usuário
+- Adição de peças ativas com débito imediato no estoque
+- Remoção de item: operador COMUM exige credenciais de Master
+- Checkout com formas de pagamento: PIX, Dinheiro, Débito, Crédito
+- Cálculo de troco para pagamento em dinheiro
+- Relatório de vendas finalizadas com filtros de data/hora — **PDF e XML** (somente Master)
+
+### Controle de acesso (frontend)
+
+| Perfil | Acesso |
+|--------|--------|
+| **MASTER** | Dashboard, todos os módulos, relatórios, CRUD de peças, PDV |
+| **COMUM** | PDV (`/sales`) e consulta de estoque (`/parts`) |
+
+Após login: Master → `/dashboard` | Comum → `/sales`
 
 ---
 
-## 💾 Instalação
+## Regras de negócio implementadas
 
-### 1. Clonar Repositório
+- Validação dupla: frontend (Zod + React Hook Form) e backend (Zod)
+- Funcionários: exclusão lógica vs física conforme histórico e vínculo com usuário
+- Peças, fabricantes, categorias, departamentos e usuários: apenas inativação (sem exclusão física)
+- Estoque mínimo de peça: valor inteiro ≥ 1
+- Auditoria obrigatória em alterações de peças
+- Alerta de estoque baixo: quantidade ≤ 5 (limiar fixo no sistema)
+- Secrets em `.env` — nunca versionados
+
+---
+
+## Arquitetura
+
+```
+Frontend (React/Vite :5173)
+        │
+        ▼  HTTP + Bearer JWT
+Backend (Express :3000)
+        │
+        ▼  Prisma ORM
+SQLite (dev.db)
+```
+
+**API base:** `http://localhost:3000/api`  
+**Health check:** `GET http://localhost:3000/health`
+
+---
+
+## MANUAL DE INSTALAÇÃO
+
+### 1. Pré-requisitos
+
+| Requisito | Versão mínima |
+|-----------|---------------|
+| Node.js | 18.x LTS |
+| npm | 9.x |
+| Git | qualquer versão recente |
+
+Banco de dados: **SQLite** (embutido — não requer instalação separada). O arquivo é criado automaticamente via Prisma a partir de `DATABASE_URL`.
+
+### 2. Clonar o repositório
 
 ```bash
 git clone https://github.com/AleskJoestar/repositoriomotorapidoplus.git
 cd repositoriomotorapidoplus
 ```
 
-### 2. Instalar Dependências Backend
+### 3. Instalar dependências
+
+**Backend (raiz do projeto):**
 
 ```bash
 npm install
 ```
 
-### 3. Instalar Dependências Frontend
+**Frontend:**
 
 ```bash
 cd frontend
@@ -158,22 +171,28 @@ npm install
 cd ..
 ```
 
-### 4. Configurar Variáveis de Ambiente
+### 4. Configurar variáveis de ambiente
 
-Copie o arquivo de exemplo:
+Copie o template na raiz do projeto:
 
 ```bash
+# Linux / macOS / Git Bash
 cp .env.example .env
 ```
 
-Edite `.env` com suas variáveis:
+```powershell
+# Windows (PowerShell)
+Copy-Item .env.example .env
+```
+
+Edite o arquivo `.env`:
 
 ```env
 # Database
 DATABASE_URL="file:./dev.db"
 
 # JWT
-JWT_SECRET=seu-secret-aqui-min-32-chars
+JWT_SECRET=your_super_secret_jwt_key_here_change_in_production
 JWT_EXPIRATION=2h
 REFRESH_TOKEN_EXPIRATION=7d
 
@@ -182,324 +201,156 @@ PORT=3000
 NODE_ENV=development
 ```
 
-### 5. Executar Migrations
+> **Produção:** altere `JWT_SECRET` para um valor aleatório com no mínimo 32 caracteres.
+
+### 5. Sincronizar o banco de dados
+
+Na raiz do projeto, execute em sequência:
 
 ```bash
+# Opção A — migrations (recomendado para desenvolvimento com histórico)
 npm run prisma:migrate
+
+# Opção B — push direto do schema (alternativa rápida)
+npx prisma db push
+
+# Gerar client Prisma
+npm run prisma:generate
+
+# Criar usuário Master semente (RF13)
+npm run prisma:seed
 ```
 
----
+O seed cria/atualiza o usuário administrador padrão do sistema.
 
-## 🚀 Como Rodar
+### 6. Inicializar a aplicação
 
-### Backend
+Abra **dois terminais**.
+
+**Terminal 1 — Backend:**
 
 ```bash
-# Desenvolvimento
 npm run dev
-
-# Build para produção
-npm run build
-
-# Rodar em produção
-npm run start
 ```
 
-**Servidor disponível em:** `http://localhost:3000`
+Servidor disponível em `http://localhost:3000`.
 
-**Health Check:** `GET http://localhost:3000/health`
-
-### Frontend
+**Terminal 2 — Frontend:**
 
 ```bash
-# Abrir novo terminal
 cd frontend
-
-# Desenvolvimento
 npm run dev
-
-# Build para produção
-npm run build
-
-# Preview da build
-npm run preview
 ```
 
-**Aplicação disponível em:** `http://localhost:5173`
+Aplicação disponível em `http://localhost:5173`.
+
+### 7. Acesso inicial
+
+1. Acesse `http://localhost:5173/login`
+2. Utilize as credenciais do **Usuário Master Semente**:
+
+| Campo | Valor |
+|-------|-------|
+| E-mail | `master@motorplus.com` |
+| Senha | `usermaster#@` |
+
+3. Após login, o Master é redirecionado para o Dashboard (`/dashboard`)
+4. A partir do Dashboard, acesse os módulos: Funcionários, Peças, PDV, Departamentos, Fabricantes, Categorias e Usuários
+
+> Crie usuários COMUM pelo módulo **Usuários** para operadores de caixa. Usuários COMUM acessam diretamente o PDV após login.
 
 ---
 
-## 📁 Estrutura do Projeto
+## Scripts úteis
+
+### Backend (raiz)
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Servidor em modo desenvolvimento |
+| `npm run build` | Compila TypeScript → `dist/` |
+| `npm run start` | Executa build de produção |
+| `npm run prisma:migrate` | Aplica migrations |
+| `npm run prisma:generate` | Gera Prisma Client |
+| `npm run prisma:seed` | Executa seed (Master semente) |
+| `npm run prisma:studio` | Interface visual do banco |
+
+### Frontend (`frontend/`)
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Servidor Vite (porta 5173) |
+| `npm run build` | Build de produção |
+| `npm run preview` | Preview da build |
+
+---
+
+## Estrutura do projeto
 
 ```
 repositoriomotorapidoplus/
-│
-├── src/                          # Backend (Node.js + Express)
+├── src/                    # Backend Express + TypeScript
 │   ├── controllers/
-│   │   └── authController.ts     # Handlers HTTP de autenticação
 │   ├── services/
-│   │   └── authService.ts        # Lógica de negócio
+│   ├── routes/             # auth, employees, parts, sales, users, ...
 │   ├── middleware/
-│   │   └── auth.ts               # Middleware JWT
-│   ├── routes/
-│   │   └── auth.ts               # Rotas de autenticação
 │   ├── schemas/
-│   │   └── authSchema.ts         # Validação Zod
-│   ├── types/
-│   │   └── index.ts              # Tipos TypeScript
-│   └── index.ts                  # Express app
-│
-├── frontend/                     # Frontend (React 18)
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Register.tsx
-│   │   │   ├── Login.tsx
-│   │   │   ├── Dashboard.tsx
-│   │   │   └── ProtectedRoute.tsx
-│   │   ├── components/
-│   │   │   ├── FormInput.tsx
-│   │   │   ├── Button.tsx
-│   │   │   ├── AuthLayout.tsx
-│   │   │   └── Toast.tsx
-│   │   ├── context/
-│   │   │   └── AuthContext.tsx
-│   │   ├── services/
-│   │   │   ├── api.ts
-│   │   │   └── authService.ts
-│   │   ├── schemas/
-│   │   │   └── authSchema.ts
-│   │   ├── types/
-│   │   │   └── auth.ts
-│   │   ├── App.tsx
-│   │   ├── main.tsx
-│   │   └── index.css
-│   ├── vite.config.ts
-│   ├── tailwind.config.js
-│   └── package.json
-│
-├── prisma/                       # Database
-│   ├── schema.prisma             # ORM schema
-│   └── migrations/               # Migrations automáticas
-│
-├── .github/
-│   ├── agents/                   # Agentes customizados
-│   │   ├── orquestrador.agent.md
-│   │   ├── analista.agent.md
-│   │   ├── frontend.agent.md
-│   │   ├── backend.agent.md
-│   │   └── scrum.agent.md
-│   └── copilot-instructions.md
-│
+│   └── index.ts
+├── frontend/               # Frontend React + Vite
+│   └── src/
+│       ├── pages/
+│       ├── components/
+│       ├── hooks/
+│       ├── services/
+│       └── context/
+├── prisma/
+│   ├── schema.prisma
+│   ├── seed.ts
+│   └── migrations/
 ├── specs/
-│   └── specs.md                  # Especificação técnica
-│
-├── .env                          # Variáveis de ambiente (não versionar)
-├── .env.example                  # Template de variáveis
-├── .gitignore                    # Proteção de secrets
-├── package.json                  # Dependências backend
-├── tsconfig.json                 # TypeScript config
-│
-├── README.md                     # Este arquivo
-├── ENTREGA_FINAL.md              # Documentação de entrega
-├── CHECKLIST_TECNICO.md          # Guia técnico
-├── SPRINT_PLANNING.md            # Histórias de usuário
-└── package-lock.json             # Dependências lockadas
+│   └── specs.md            # Especificação técnica (RF01–RF10)
+├── .env.example
+├── AGENTS.md
+└── README.md
 ```
 
 ---
 
-## 📚 Documentação
+## Documentação complementar
 
-| Documento | Descrição |
-|-----------|-----------|
-| [specs/specs.md](specs/specs.md) | Especificação técnica completa do projeto |
-| [ENTREGA_FINAL.md](ENTREGA_FINAL.md) | Resumo executivo da entrega do Módulo 1 |
-| [CHECKLIST_TECNICO.md](CHECKLIST_TECNICO.md) | Guia técnico passo-a-passo de implementação |
-| [SPRINT_PLANNING.md](SPRINT_PLANNING.md) | Histórias de usuário e planning |
-| [.github/copilot-instructions.md](.github/copilot-instructions.md) | Instruções globais para desenvolvimento |
+| Arquivo | Conteúdo |
+|---------|----------|
+| [specs/specs.md](specs/specs.md) | Requisitos funcionais detalhados |
+| [AGENTS.md](AGENTS.md) | Instruções de desenvolvimento e status dos módulos |
 
 ---
 
-## 🧪 Testando a Aplicação
+## Solução de problemas
 
-### Fluxo Completo: Register → Login → Dashboard
-
-#### 1. Cadastro (Register)
+**Porta 3000 em uso:**
 
 ```bash
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "João Silva",
-    "email": "joao@example.com",
-    "password": "senha123"
-  }'
-```
-
-**Resposta (201):**
-```json
-{
-  "message": "Usuário registrado com sucesso"
-}
-```
-
-#### 2. Login
-
-```bash
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "joao@example.com",
-    "password": "senha123"
-  }'
-```
-
-**Resposta (200):**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expiresIn": "2h"
-}
-```
-
-#### 3. Acessar Dashboard
-
-No frontend, após login:
-- ✅ Token é armazenado em `localStorage`
-- ✅ Usuário é redirecionado para `/dashboard`
-- ✅ Dashboard exibe dados do usuário
-
-### Testes Manuais (Postman/Insomnia)
-
-Cenários de teste documentados em [CHECKLIST_TECNICO.md](CHECKLIST_TECNICO.md#fase-3-testes--refinamento)
-
----
-
-## 🔒 Segurança
-
-### Implementado
-
-- ✅ Criptografia de senha com bcryptjs (10 rounds)
-- ✅ JWT com 2 horas de expiração
-- ✅ Refresh token com 7 dias de expiração
-- ✅ Middleware de autenticação
-- ✅ CORS configurado
-- ✅ Helmet para headers de segurança
-- ✅ Mensagens de erro genéricas (anti-enumeração)
-- ✅ Variáveis de ambiente em `.env` (não versionadas)
-
-### Recomendações de Produção
-
-- [ ] Alterar `JWT_SECRET` para valor aleatório (32+ chars)
-- [ ] Migrar tokens de localStorage para sessionStorage/cookies HttpOnly
-- [ ] Implementar rate limiting em endpoints de auth
-- [ ] Configurar HTTPS
-- [ ] Configurar CORS para domínios específicos
-- [ ] Setup de backup automático do banco de dados
-- [ ] Monitoramento e logs de acesso
-
-Ver [ENTREGA_FINAL.md](ENTREGA_FINAL.md#checklist-pré-produção) para checklist completo.
-
----
-
-## 🚀 Próximos Módulos
-
-### Módulo 3: Gerenciamento de Peças/Estoque (RF07-RF10)
-
-**Funcionalidades:**
-- RF07: Cadastrar Peça (código único, categoria, quantidade, localização)
-- RF08: Editar Peça (com log de auditoria)
-- RF09: Excluir Peça (exclusão lógica com validação de histórico)
-- RF10: Relatório de Peças (PDF/XLSX com alerta de estoque baixo)
-
-**Características:**
-- Validação de combinação única (Nome + Fabricante)
-- Log de auditoria automático em edições
-- Prevenção de exclusão física se houver histórico de movimentação
-- Filtros: Categoria, Fabricante, Status, Alerta de Estoque Baixo
-- Exportação profissional em PDF e XLSX
-
-**Estimativa:** 45-55 Story Points | 4-5 semanas
-
----
-
-## 🤝 Contribuindo
-
-### Workflow de Desenvolvimento
-
-Este projeto usa **5 Agentes Especializados** com metodologia estruturada:
-
-1. **Orquestrador** — Coordena workflow
-2. **Analista** — Valida regras de negócio
-3. **Backend** — Cria APIs e banco de dados
-4. **Frontend** — Cria interfaces e componentes
-5. **Scrum** — Planeja sprints e histórias
-
-Ver [.github/agents/](./github/agents/) para instruções de cada agente.
-
----
-
-## 📞 Suporte
-
-### Dúvidas Técnicas
-
-Consulte:
-- [specs/specs.md](specs/specs.md) — Especificação técnica
-- [ENTREGA_FINAL.md](ENTREGA_FINAL.md) — Resumo técnico
-- [CHECKLIST_TECNICO.md](CHECKLIST_TECNICO.md) — Guia passo-a-passo
-
-### Problemas Comuns
-
-**Backend não inicia:**
-```bash
-# Verifique se a porta 3000 está em uso
+# Windows
 netstat -ano | findstr :3000
 
-# Ou rode em porta diferente
-PORT=3001 npm run dev
+# Linux / macOS
+lsof -i :3000
 ```
 
-**Frontend não conecta ao backend:**
+Alternativa: defina `PORT=3001` no `.env`.
+
+**Frontend não conecta ao backend:** confirme que o backend está rodando em `http://localhost:3000` e que o endpoint `/health` responde.
+
+**Erro de banco / schema desatualizado:**
+
 ```bash
-# Verifique CORS em src/index.ts
-# Certifique-se que o backend está rodando em http://localhost:3000
-```
-
-**Erro de migrations:**
-```bash
-# Resete o banco de dados
-npm run prisma:reset
-npm run prisma:migrate
+npx prisma db push
+npm run prisma:generate
+npm run prisma:seed
 ```
 
 ---
 
-## 📝 Licença
+**Desenvolvido por Alessandro Diniz Loss**
 
-Este projeto é privado e desenvolvido para MotoRapido PLUS.
-
----
-
-## 👥 Time
-
-- **Orquestrador** — Coordenação e planning
-- **Analista** — Validação de regras
-- **Backend** — APIs e banco de dados
-- **Frontend** — Interfaces e UX
-- **Scrum** — Organização de sprints
-
----
-
-## 📊 Status do Projeto
-
-| Módulo | Status | Qualidade | Data |
-|--------|--------|-----------|------|
-| Módulo 1: Autenticação | ✅ Completo | ⭐⭐⭐⭐⭐ | 17/06/2026 |
-| Módulo 2: Funcionários | ✅ Completo | ⭐⭐⭐⭐⭐ | 17/06/2026 |
-| Módulo 3: Peças/Estoque | 🚀 Próximo | — | — |
-
----
-
-**Desenvolvido com ❤️ usando Node.js, React e TypeScript**
-
-Para mais informações, acesse: https://github.com/AleskJoestar/repositoriomotorapidoplus
+Repositório: https://github.com/AleskJoestar/repositoriomotorapidoplus
