@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SystemUser, CreateSystemUserRequest } from '@/types/user';
+import { SystemUser, CreateSystemUserRequest, UpdateSystemUserRequest } from '@/types/user';
 import { userService } from '@/services/userService';
 
 export interface UseUsersReturn {
@@ -9,6 +9,7 @@ export interface UseUsersReturn {
   error: string | null;
   fetchUsers: () => Promise<void>;
   createUser: (data: CreateSystemUserRequest) => Promise<void>;
+  updateUser: (id: string, data: UpdateSystemUserRequest) => Promise<void>;
   inactivateUser: (id: string) => Promise<void>;
   reactivateUser: (id: string) => Promise<void>;
   downloadReportPdf: () => Promise<void>;
@@ -57,6 +58,20 @@ export function useUsers(): UseUsersReturn {
       setUsers((prev) => [created, ...prev]);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erro ao criar usuário');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateUser = useCallback(async (id: string, data: UpdateSystemUserRequest) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const updated = await userService.update(id, data);
+      setUsers((prev) => prev.map((u) => (u.id === Number(id) ? updated : u)));
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Erro ao atualizar usuário');
       throw err;
     } finally {
       setLoading(false);
@@ -125,6 +140,7 @@ export function useUsers(): UseUsersReturn {
     error,
     fetchUsers,
     createUser,
+    updateUser,
     inactivateUser,
     reactivateUser,
     downloadReportPdf,

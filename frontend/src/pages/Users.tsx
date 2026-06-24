@@ -177,15 +177,33 @@ export const Users: React.FC = () => {
                         </td>
                         <td className="px-6 py-3 text-center">
                           {user.isMasterSeed ? (
-                            <span className="text-xs text-gray-400">Semente</span>
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-xs text-gray-400">Semente</span>
+                              <button
+                                onClick={() => navigate(`/users/${user.id}/edit`)}
+                                className="w-8 h-8 rounded-lg hover:bg-blue-100"
+                                title="Visualizar"
+                              >
+                                👁️
+                              </button>
+                            </div>
                           ) : user.status === 'Ativo' ? (
-                            <button
-                              onClick={() => setDeleteModal({ user, open: true })}
-                              className="w-8 h-8 rounded-lg hover:bg-red-100"
-                              title="Inativar"
-                            >
-                              🗑️
-                            </button>
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => navigate(`/users/${user.id}/edit`)}
+                                className="w-8 h-8 rounded-lg hover:bg-blue-100"
+                                title="Editar"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => setDeleteModal({ user, open: true })}
+                                className="w-8 h-8 rounded-lg hover:bg-red-100"
+                                title="Inativar"
+                              >
+                                🗑️
+                              </button>
+                            </div>
                           ) : (
                             <button
                               onClick={() => handleReactivate(user)}

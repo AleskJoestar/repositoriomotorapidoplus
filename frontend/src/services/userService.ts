@@ -1,9 +1,14 @@
 import api from './api';
-import { SystemUser, CreateSystemUserRequest } from '@/types/user';
+import { SystemUser, CreateSystemUserRequest, UpdateSystemUserRequest } from '@/types/user';
 
 export const userService = {
   getAll: async (): Promise<SystemUser[]> => {
     const response = await api.get('/users');
+    return response.data;
+  },
+
+  getById: async (id: string): Promise<SystemUser> => {
+    const response = await api.get(`/users/${id}`);
     return response.data;
   },
 
@@ -13,6 +18,11 @@ export const userService = {
       employeeId: data.employeeId || undefined,
     };
     const response = await api.post('/users', payload);
+    return response.data;
+  },
+
+  update: async (id: string, data: UpdateSystemUserRequest): Promise<SystemUser> => {
+    const response = await api.put(`/users/${id}`, data);
     return response.data;
   },
 

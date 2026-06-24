@@ -22,18 +22,18 @@ export const MasterAuthModal: React.FC<MasterAuthModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onConfirm(email, senha);
+    await onConfirm(email.trim().toLowerCase(), senha);
     setEmail('');
     setSenha('');
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 normal-case"
       onClick={onCancel}
     >
       <div
-        className="bg-white rounded-lg shadow-lg p-6 w-96 max-w-full"
+        className="bg-white rounded-lg shadow-lg p-6 w-96 max-w-full normal-case"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-bold text-gray-900 mb-2">Autorização Master</h2>
@@ -46,6 +46,10 @@ export const MasterAuthModal: React.FC<MasterAuthModalProps> = ({
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="normal-case"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
             required
           />
           <FormInput
@@ -53,6 +57,9 @@ export const MasterAuthModal: React.FC<MasterAuthModalProps> = ({
             type="password"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
+            className="normal-case"
+            autoCapitalize="off"
+            autoCorrect="off"
             required
           />
           <div className="flex gap-3 justify-end">

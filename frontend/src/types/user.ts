@@ -19,3 +19,8 @@ export interface CreateSystemUserRequest {
   employeeId?: number;
   accessType: AccessType;
 }
+
+export interface UpdateSystemUserRequest {
+  senha?: string;
+  accessType?: AccessType;
+}

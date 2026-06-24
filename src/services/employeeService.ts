@@ -135,6 +135,19 @@ const cascadeInactivateLinkedUser = async (employeeId: number): Promise<void> =>
   }
 };
 
+const cascadeReactivateLinkedUser = async (employeeId: number): Promise<void> => {
+  const linkedUser = await prisma.user.findUnique({
+    where: { employeeId },
+  });
+
+  if (linkedUser && linkedUser.status === 'Inativo' && !linkedUser.isMasterSeed) {
+    await prisma.user.update({
+      where: { id: linkedUser.id },
+      data: { status: 'Ativo', inactivatedAt: null },
+    });
+  }
+};
+
 /**
  * RF03 - Criar novo funcionário
  */
@@ -447,6 +460,8 @@ export const reactivateEmployee = async (
     { status: 'Ativo', inactivatedAt: null },
     userId
   );
+
+  await cascadeReactivateLinkedUser(numericId);
 
   return formatEmployee(reactivated);
 };

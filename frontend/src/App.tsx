@@ -86,6 +86,26 @@ const App: React.FC = () => {
 
           />
 
+          <Route
+
+            path="/users/:id/edit"
+
+            element={
+
+              <MasterRoute>
+
+                <div className="normal-case">
+
+                  <UserFormPage />
+
+                </div>
+
+              </MasterRoute>
+
+            }
+
+          />
+
 
 
           <Route element={<UppercaseLayout />}>

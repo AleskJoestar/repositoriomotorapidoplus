@@ -133,6 +133,58 @@ export const createUser = async (data: {
   return formatUser(user);
 };
 
+export const getUserById = async (id: number): Promise<UserDto> => {
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: { employee: { select: { name: true } } },
+  });
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    (error as Error & { statusCode?: number }).statusCode = 404;
+    throw error;
+  }
+  return formatUser(user);
+};
+
+export const updateUser = async (
+  id: number,
+  data: {
+    senha?: string;
+    accessType?: 'MASTER' | 'COMUM';
+  }
+): Promise<UserDto> => {
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) {
+    const error = new Error('Usuário não encontrado');
+    (error as Error & { statusCode?: number }).statusCode = 404;
+    throw error;
+  }
+
+  if (user.isMasterSeed) {
+    if (data.senha !== undefined || data.accessType !== undefined) {
+      const error = new Error('Usuário semente não pode ter senha ou privilégios alterados');
+      (error as Error & { statusCode?: number }).statusCode = 403;
+      throw error;
+    }
+  }
+
+  const updateData: { password?: string; accessType?: 'MASTER' | 'COMUM' } = {};
+
+  if (data.senha !== undefined) {
+    updateData.password = await bcrypt.hash(data.senha, 10);
+  }
+  if (data.accessType !== undefined) {
+    updateData.accessType = data.accessType;
+  }
+
+  const updated = await prisma.user.update({
+    where: { id },
+    data: updateData,
+    include: { employee: { select: { name: true } } },
+  });
+  return formatUser(updated);
+};
+
 export const inactivateUser = async (id: number): Promise<UserDto> => {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) {

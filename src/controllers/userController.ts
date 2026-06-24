@@ -2,13 +2,15 @@ import { Request, Response } from 'express';
 import { ZodError } from 'zod';
 import {
   getAllUsers,
+  getUserById,
   createUser,
+  updateUser,
   inactivateUser,
   reactivateUser,
   generateUsersPdf,
   generateUsersXml,
 } from '@/services/userService';
-import { createUserSchema } from '@/schemas/userSchema';
+import { createUserSchema, updateUserSchema } from '@/schemas/userSchema';
 
 export const listUsersController = async (
   _req: Request,
@@ -30,6 +32,51 @@ export const createUserController = async (
     const data = createUserSchema.parse(req.body);
     const user = await createUser(data);
     res.status(201).json(user);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res.status(400).json({ error: 'Dados inválidos', details: error.errors });
+      return;
+    }
+    if (error instanceof Error) {
+      const code = (error as Error & { statusCode?: number }).statusCode || 500;
+      res.status(code).json({ error: error.message });
+    }
+  }
+};
+
+export const getUserByIdController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'ID de usuário inválido' });
+      return;
+    }
+    const user = await getUserById(id);
+    res.status(200).json(user);
+  } catch (error) {
+    if (error instanceof Error) {
+      const code = (error as Error & { statusCode?: number }).statusCode || 500;
+      res.status(code).json({ error: error.message });
+    }
+  }
+};
+
+export const updateUserController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) {
+      res.status(400).json({ error: 'ID de usuário inválido' });
+      return;
+    }
+    const data = updateUserSchema.parse(req.body);
+    const user = await updateUser(id, data);
+    res.status(200).json(user);
   } catch (error) {
     if (error instanceof ZodError) {
       res.status(400).json({ error: 'Dados inválidos', details: error.errors });
